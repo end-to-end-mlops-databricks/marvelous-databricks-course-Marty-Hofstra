@@ -1061,6 +1061,7 @@ dependencies = [
     { name = "mlflow" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pre-commit" },
     { name = "pyarrow" },
     { name = "scikit-learn" },
     { name = "scipy" },
@@ -1072,7 +1073,6 @@ dev = [
     { name = "databricks-sdk" },
     { name = "ipykernel" },
     { name = "pip" },
-    { name = "pre-commit" },
 ]
 
 [package.metadata]
@@ -1089,7 +1089,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26.4,<2" },
     { name = "pandas", specifier = ">=2.2.2,<3" },
     { name = "pip", marker = "extra == 'dev'", specifier = ">=24.2" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0,<4" },
+    { name = "pre-commit", specifier = ">=3.0.0,<4" },
     { name = "pyarrow", specifier = ">=15.0.2,<16" },
     { name = "scikit-learn", specifier = ">=1.5.1,<2" },
     { name = "scipy", specifier = ">=1.14.1,<2" },
