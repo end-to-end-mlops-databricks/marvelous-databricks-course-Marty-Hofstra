@@ -1,7 +1,7 @@
 [project]
-name = "mlops-with-databricks"
+name = "hotel_reservations"
 version = "0.0.1"
-description = "MLOps with Databricks"
+description = "Hotel reservations package for MLOps with Databricks"
 readme = "README.md"
 requires-python = "==3.11.9"
 dependencies = ["lightgbm>=4.5.0, <5",
@@ -14,14 +14,16 @@ dependencies = ["lightgbm>=4.5.0, <5",
                 "cffi>=1.17.1, <2",
                 "scipy>=1.14.1, <2",
                 "matplotlib>=3.9.2, <4",
-                "databricks-feature-engineering>=0.6, <1"]
+                "databricks-feature-engineering>=0.6, <1",
+                "toml>=0.10.2, <11"]
 
 [project.optional-dependencies]
 dev = ["databricks-connect>=15.4.1, <16",
        "databricks-sdk>=0.32.0, <0.33",
        "ipykernel>=6.29.5, <7",
        "pip>=24.2",
-       "pre-commit>=3.0.0, <4"]
+       "pre-commit>=3.0.0, <4",
+       "pytest>=7.4.2, <8"]
 
 [tool.ruff]
 line-length = 120

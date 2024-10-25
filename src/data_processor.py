@@ -5,24 +5,62 @@ from pyspark.ml import Pipeline
 from typing import List, Tuple, Dict
 
 class DataProcessor:
+    """A class to preprocess the input data
+    
+    ...
+
+    Attributes
+    ----------
+    config : Dict[str, List[str]]
+        Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+
+    Methods
+    -------
+    read_UC_spark:
+        Reads from Unity Catalog as a Spark Dataframe, the naming of tables in Databricks consists of three levels: catalog, schema and table name.
+    preprocess_data:
+        Preprocesses the data by handling missing values, scaling numeric features, and encoding categorical features        
+    split_data:
+        Splits the DataFrame into training and test sets
+    """    
     def __init__(self, config: Dict[str, List[str]]) -> None:
+        """Constructs all the necessary attributes for the preprocessing object
+
+        Args:
+            config (Dict[str, List[str]]): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+        """        
         self.df: DataFrame = self.read_UC_spark(config['catalog'], config['schema'], config['table_name'])
         self.config: Dict[str, List[str]] = config
-        self.X: DataFrame = None  # Placeholder for feature matrix"
-        self.y: DataFrame = None  # Placeholder for target variable
-        self.preprocessor: Pipeline = None  # Placeholder for preprocessing pipeline
+        self.X: DataFrame = None
+        self.y: DataFrame = None
+        self.preprocessor: Pipeline = None
 
     def read_UC_spark(self, catalog: str, schema: str, table_name: str) -> DataFrame:
-        """Loads data from a CSV file into a PySpark DataFrame."""
+        """Reads from Unity Catalog as a Spark Dataframe, the naming of tables in Databricks consists of three levels: catalog, schema and table name.
+
+        Args:
+            catalog (str): Catalog in which the table to dead from resides.
+            schema (str): Schema/database in which the table to dead from resides, 
+            table_name (str): The name of the table to read from
+
+        Returns:
+            DataFrame: The data in PySpark format
+        """
         three_level_table_name = f"{catalog}.{schema}.{table_name}"
         return spark.read.table(three_level_table_name)
 
     def preprocess_data(self) -> None:
-        """Preprocesses the data by handling missing values, scaling numeric features, and encoding categorical features."""
+        """ Preprocessing of data, consisting of the following steps:
+        - Imputation of missing values
+        - Handling of categorical features
+        - Use of the VectorAssembler to combine numeric and categorical features
+        - Combine all numeric and categorical features into one feature column
+        - Build the preprocessing pipeline
+        """        
         target: str = self.config['target']
         self.df = self.df.dropna(subset=[target])
 
-        # Handle missing numeric values and scaling
+
         numeric_imputer: Imputer = Imputer(
             inputCols=self.config['num_features'], 
             outputCols=[f'{c}_imputed' for c in self.config['num_features']]
@@ -30,11 +68,8 @@ class DataProcessor:
 
         scaler: StandardScaler = StandardScaler(inputCol='features_num', outputCol='scaled_features')
 
-        # Handle categorical features
         indexers: List[StringIndexer] = [StringIndexer(inputCol=col, outputCol=f'{col}_indexed') for col in self.config['cat_features']]
         encoders: List[OneHotEncoder] = [OneHotEncoder(inputCol=f'{col}_indexed', outputCol=f'{col}_encoded') for col in self.config['cat_features']]
-
-        # VectorAssembler to combine numeric and categorical features
         assembler_numeric: VectorAssembler = VectorAssembler(
             inputCols=[f'{c}_imputed' for c in self.config['num_features']],
             outputCol='features_num'
@@ -45,18 +80,24 @@ class DataProcessor:
             outputCol='features_cat'
         )
 
-        # Combine all numeric and categorical features into one feature column
         assembler_all: VectorAssembler = VectorAssembler(
             inputCols=['scaled_features', 'features_cat'],
             outputCol='features'
         )
 
-        # Build the preprocessing pipeline
         stages: List = [numeric_imputer, assembler_numeric, scaler] + indexers + encoders + [assembler_categorical, assembler_all]
         self.preprocessor = Pipeline(stages=stages)
 
     def split_data(self, test_size: float = 0.2, random_state: int = 42) -> Tuple[DataFrame, DataFrame]:
-        """Splits the DataFrame into training and test sets."""
+        """Splits the DataFrame into training and test sets
+
+        Args:
+            test_size (float, optional): Proportion of the input data to be part of the test set. Defaults to 0.2.
+            random_state (int, optional): Value of the state. Defaults to 42.
+
+        Returns:
+            Tuple[DataFrame, DataFrame]: The input data split up into a training and test set
+        """
         train: DataFrame
         test: DataFrame
         train, test = self.df.randomSplit([1.0 - test_size, test_size], seed=random_state)

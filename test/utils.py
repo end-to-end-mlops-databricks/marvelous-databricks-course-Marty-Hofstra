@@ -1,16 +1,17 @@
 from pyspark.sql import SparkSession
 from pytest import fixture, mark, param
-from pyspark import SparkConf
+from databricks.connect import DatabricksSession
 
+# pytest.fixture can be used to mark unit tests, this is useful for spark unit tests because it is not always desired/possible to run them locally. This can be done by running `python -m pytest -m "not spark"`
 @fixture(
     scope="session",
     params=[param("spark", marks=[mark.spark, mark.filterwarnings("ignore:distutils Version classes are deprecated")])],
 )
-def spark_session() -> SparkSession:
-    """Creates a SparkSession fixture for the entire test session.
 
-    This is setup such that that SparkSession should only be initialised once.
-    Since it can take a long time for Spark to start, this should save us time.
+def spark_session() -> SparkSession:
+  """Creates a SparkSession fixture for the entire test session.
+
+    Since we're using databricks-connect, a DatabricksSession is used. Ensure that you've added your cluster_id to the DEFAULT databricks profile in the .databrickscfg file.
 
     If you do not want to test Spark-related functionality, you can skip these
     tests by running:
@@ -20,14 +21,7 @@ def spark_session() -> SparkSession:
     fixture's parameters.
 
     Returns:
-        SparkSession: A Spark session to use, shared between tests to save
-            boot time.
+        SparkSession: A Spark session to use
     """
-    print("Launching Spark session: please wait...")
-    config = (
-        SparkConf()
-        .set("spark.sql.execution.arrow.enabled", "False")
-        .set("spark.sql.execution.arrow.pyspark.enabled", "False")
-    )
-    return SparkSession.builder.config(conf=config).getOrCreate()
-    
+  spark = DatabricksSession.builder.getOrCreate()
+  return spark
