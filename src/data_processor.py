@@ -25,13 +25,13 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: Dict[str, List[str]]) -> None:
+    def __init__(self, config: Dict[str, List[str]], spark: SparkSession) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
             config (Dict[str, List[str]]): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
         """
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"])
+        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
         self.config: Dict[str, List[str]] = config
         self.X: DataFrame = None
         self.y: DataFrame = None
