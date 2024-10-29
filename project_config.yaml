@@ -1,5 +1,6 @@
-catalog_name: users # Change this to the catalog you're using
-schema_name: martijn_hofstra # Change this to the schema where the hotel reservations dataset resides
+catalog: users # Change this to the catalog you're using
+schema: martijn_hofstra # Change this to the schema where the hotel reservations dataset resides
+table_name: hotel_reservations
 
 parameters:
   learning_rate: 0.01
