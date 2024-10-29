@@ -3,7 +3,10 @@ from unittest.mock import patch
 import pytest
 from pyspark.sql import SparkSession
 
-from src.data_processor import DataProcessor
+from src.data_processing.data_processor import DataProcessor
+from test.utils import spark_session
+
+spark = spark_session
 
 mock_config = {
     "catalog": "my_catalog",
@@ -16,18 +19,18 @@ mock_config = {
 
 
 @pytest.fixture
-def mock_dataframe(spark_session: SparkSession):
+def mock_dataframe(spark: SparkSession):
     data = [
         {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": 1},
         {"age": 30, "income": 60000, "gender": "F", "city": "LA", "purchased": 0},
         {"age": None, "income": 70000, "gender": "F", "city": None, "purchased": 1},
     ]
-    return spark_session.createDataFrame(data)
+    return spark.createDataFrame(data)
 
 
 # Test case for the __init__ and load function
-@patch("src.data_processor.DataProcessor.read_UC_spark")
-def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark_session: SparkSession):
+@patch("src.data_processing.data_processor.DataProcessor.read_UC_spark")
+def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config)
@@ -38,8 +41,8 @@ def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark_session: 
 
 
 # Test the split_data function
-@patch("src.data_processor.DataProcessor.read_UC_spark")
-def test_split_data(mock_read_UC_spark, mock_dataframe, spark_session: SparkSession):
+@patch("src.data_processing.data_processor.DataProcessor.read_UC_spark")
+def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config)

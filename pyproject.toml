@@ -15,7 +15,9 @@ dependencies = ["lightgbm>=4.5.0, <5",
                 "scipy>=1.14.1, <2",
                 "matplotlib>=3.9.2, <4",
                 "databricks-feature-engineering>=0.6, <1",
-                "toml>=0.10.2, <11"]
+                "toml>=0.10.2, <11",
+                "PyYAML>=6.0, <7",
+                "pathlib>=1.0.0, <2"]
 
 [project.optional-dependencies]
 dev = ["databricks-connect>=15.4.1, <16",

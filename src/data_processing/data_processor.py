@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 
 
 class DataProcessor:
@@ -25,19 +25,19 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: Dict[str, List[str]], spark: SparkSession) -> None:
+    def __init__(self, config: Dict[str, List[str]]) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
             config (Dict[str, List[str]]): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
         """
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
+        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"])
         self.config: Dict[str, List[str]] = config
         self.X: DataFrame = None
         self.y: DataFrame = None
         self.preprocessor: Pipeline = None
 
-    def read_UC_spark(self, catalog: str, schema: str, table_name: str, spark: SparkSession) -> DataFrame:
+    def read_UC_spark(self, catalog: str, schema: str, table_name: str) -> DataFrame:
         """Reads from Unity Catalog as a Spark Dataframe, the naming of tables in Databricks consists of three levels: catalog, schema and table name.
 
         Args:
@@ -49,7 +49,7 @@ class DataProcessor:
             DataFrame: The data in PySpark format
         """
         three_level_table_name = f"{catalog}.{schema}.{table_name}"
-        return spark.read.table(three_level_table_name)
+        return spark.read.table(three_level_table_name)  # type: ignore # noqa: F821
 
     def preprocess_data(self) -> None:
         """Preprocessing of data, consisting of the following steps:
