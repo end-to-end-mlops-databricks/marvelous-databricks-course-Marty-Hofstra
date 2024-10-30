@@ -1,5 +1,5 @@
 version = 1
-requires-python = "==3.11.9"
+requires-python = "==3.11.0"
 resolution-markers = [
     "platform_system != 'Windows'",
     "platform_system == 'Windows'",
@@ -135,7 +135,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
-    { name = "urllib3", marker = "python_full_version == '3.11.9'" },
+    { name = "urllib3", marker = "python_full_version == '3.11.0'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fc/18/87ed003aaeca9e5394aac387c934ab8071d4cd21dcde3df71b490042d4d3/botocore-1.35.41.tar.gz", hash = "sha256:8a09a32136df8768190a6c92f0240cd59c30deb99c89026563efadbbed41fa00", size = 12835043 }
 wheels = [
@@ -726,6 +726,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "toml" },
+    { name = "types-pyyaml" },
 ]
 
 [package.optional-dependencies]
@@ -760,6 +761,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.5.1,<2" },
     { name = "scipy", specifier = ">=1.14.1,<2" },
     { name = "toml", specifier = ">=0.10.2,<11" },
+    { name = "types-pyyaml", specifier = ">=6.0,<7" },
 ]
 
 [[package]]
@@ -839,7 +841,7 @@ dependencies = [
     { name = "pygments" },
     { name = "stack-data" },
     { name = "traitlets" },
-    { name = "typing-extensions", marker = "python_full_version == '3.11.9'" },
+    { name = "typing-extensions", marker = "python_full_version == '3.11.0'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f7/21/48db7d9dd622b9692575004c7c98f85f5629428f58596c59606d36c51b58/ipython-8.28.0.tar.gz", hash = "sha256:0d0d15ca1e01faeb868ef56bc7ee5a0de5bd66885735682e8a322ae289a13d1a", size = 5495762 }
 wheels = [
@@ -1197,7 +1199,7 @@ name = "pandas"
 version = "2.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "python_full_version == '3.11.9'" },
+    { name = "numpy", marker = "python_full_version == '3.11.0'" },
     { name = "python-dateutil" },
     { name = "pytz" },
     { name = "tzdata" },
@@ -1646,7 +1648,7 @@ name = "sqlalchemy"
 version = "2.0.36"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "greenlet", marker = "(platform_machine == 'AMD64' and python_full_version == '3.11.9') or (platform_machine == 'WIN32' and python_full_version == '3.11.9') or (platform_machine == 'aarch64' and python_full_version == '3.11.9') or (platform_machine == 'amd64' and python_full_version == '3.11.9') or (platform_machine == 'ppc64le' and python_full_version == '3.11.9') or (platform_machine == 'win32' and python_full_version == '3.11.9') or (platform_machine == 'x86_64' and python_full_version == '3.11.9')" },
+    { name = "greenlet", marker = "(platform_machine == 'AMD64' and python_full_version == '3.11.0') or (platform_machine == 'WIN32' and python_full_version == '3.11.0') or (platform_machine == 'aarch64' and python_full_version == '3.11.0') or (platform_machine == 'amd64' and python_full_version == '3.11.0') or (platform_machine == 'ppc64le' and python_full_version == '3.11.0') or (platform_machine == 'win32' and python_full_version == '3.11.0') or (platform_machine == 'x86_64' and python_full_version == '3.11.0')" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/65/9cbc9c4c3287bed2499e05033e207473504dc4df999ce49385fb1f8b058a/sqlalchemy-2.0.36.tar.gz", hash = "sha256:7f2767680b6d2398aea7082e45a774b2b0767b5c8d8ffb9c8b683088ea9b29c5", size = 9574485 }
@@ -1728,6 +1730,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/eb/79/72064e6a701c2183016abbbfedaba506d81e30e232a68c9f0d6f6fcd1574/traitlets-5.14.3.tar.gz", hash = "sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7", size = 161621 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl", hash = "sha256:b74e89e397b1ed28cc831db7aea759ba6640cb3de13090ca145426688ff1ac4f", size = 85359 },
+]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.20240917"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/7d/a95df0a11f95c8f48d7683f03e4aed1a2c0fc73e9de15cca4d38034bea1a/types-PyYAML-6.0.12.20240917.tar.gz", hash = "sha256:d1405a86f9576682234ef83bcb4e6fff7c9305c8b1fbad5e0bcd4f7dbdc9c587", size = 12381 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/2c/c1d81d680997d24b0542aa336f0a65bd7835e5224b7670f33a7d617da379/types_PyYAML-6.0.12.20240917-py3-none-any.whl", hash = "sha256:392b267f1c0fe6022952462bf5d6523f31e37f6cea49b14cee7ad634b6301570", size = 15264 },
 ]
 
 [[package]]

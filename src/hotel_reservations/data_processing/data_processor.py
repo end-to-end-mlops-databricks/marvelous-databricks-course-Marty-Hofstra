@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 
 class DataProcessor:
@@ -25,31 +25,34 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: Dict[str, List[str]]) -> None:
+    def __init__(
+        self, config: Dict[str, str | List[str] | Dict[str, int | float]], spark: SparkSession | None = None
+    ) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
             config (Dict[str, List[str]]): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+            spark (SparkSession | None): The spark session is required for running Spark functionality outside of Databricks. Defaults to None.
         """
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"])
+        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
         self.config: Dict[str, List[str]] = config
         self.X: DataFrame = None
         self.y: DataFrame = None
         self.preprocessor: Pipeline = None
 
-    def read_UC_spark(self, catalog: str, schema: str, table_name: str) -> DataFrame:
+    def read_UC_spark(self, catalog: str, schema: str, table_name: str, spark: SparkSession | None = None) -> DataFrame:
         """Reads from Unity Catalog as a Spark Dataframe, the naming of tables in Databricks consists of three levels: catalog, schema and table name.
 
         Args:
             catalog (str): Catalog in which the table to dead from resides.
             schema (str): Schema/database in which the table to dead from resides,
             table_name (str): The name of the table to read from
-
+            spark (SparkSession | None): The spark session is required for running Spark functionality outside of Databricks. Defaults to None.
         Returns:
             DataFrame: The data in PySpark format
         """
         three_level_table_name = f"{catalog}.{schema}.{table_name}"
-        return spark.read.table(three_level_table_name)  # type: ignore # noqa: F821
+        return spark.read.table(three_level_table_name)
 
     def preprocess_data(self) -> None:
         """Preprocessing of data, consisting of the following steps:

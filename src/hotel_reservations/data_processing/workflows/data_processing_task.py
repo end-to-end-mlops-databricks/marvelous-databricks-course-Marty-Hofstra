@@ -1,24 +1,26 @@
 import logging
-from pathlib import Path
 
 import yaml
+from databricks.connect import DatabricksSession
 
-from src.data_processing.data_processor import DataProcessor
+from hotel_reservations.data_processing.data_processor import DataProcessor
 
 
 def main():
-    try:
-        root_dir = Path(__file__).resolve().parent.parent  # Two levels up to the root folder
-        config_path = root_dir / "project_config.yaml"
+    spark = DatabricksSession.builder.getOrCreate()
 
-        with open(config_path, "r") as file:
+    try:
+        with open("../../../project_config.yaml", "r") as file:
             config = yaml.safe_load(file)
         logging.info("Configuration file loaded successfully.")
+    except FileNotFoundError as e:
+        logging.error(f"Configuration file not found: {e}")
+        return
     except Exception as e:
-        logging.error("Failed to load configuration file: %s", e)
-        raise
+        logging.error(f"Error loading configuration file: {e}")
+        return
 
-    data_preprocessor = DataProcessor(config)
+    data_preprocessor = DataProcessor(config, spark)
 
     data_preprocessor.preprocess_data()
 

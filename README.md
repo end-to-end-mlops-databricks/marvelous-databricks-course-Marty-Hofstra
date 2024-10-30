@@ -3,6 +3,7 @@ Marvelous MLOps End-to-end MLOps with Databricks Marty-Hofstra repo
 
 ## Description
 This repo contains functionality for modelling the hotel reservations dataset, this can be [found here](https://www.kaggle.com/datasets/ahsan81/hotel-reservations-classification-dataset)
+
 ## Setup
 ### Virtual environment
 In order to set your venv, run `make init` in the terminal. UV is used as Python package installer and resolver, it can be installed by running `brew install uv`.

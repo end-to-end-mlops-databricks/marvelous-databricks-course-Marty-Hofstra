@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from pyspark.sql import SparkSession
 
-from src.data_processing.data_processor import DataProcessor
+from src.hotel_reservations.data_processing.data_processor import DataProcessor
 from test.utils import spark_session
 
 spark = spark_session
@@ -29,23 +29,25 @@ def mock_dataframe(spark: SparkSession):
 
 
 # Test case for the __init__ and load function
-@patch("src.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
 def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
-    processor = DataProcessor(mock_config)
+    processor = DataProcessor(mock_config, spark)
 
-    mock_read_UC_spark.assert_called_once_with(mock_config["catalog"], mock_config["schema"], mock_config["table_name"])
+    mock_read_UC_spark.assert_called_once_with(
+        mock_config["catalog"], mock_config["schema"], mock_config["table_name"], spark
+    )
 
     assert processor.df == mock_dataframe
 
 
 # Test the split_data function
-@patch("src.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
 def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
-    processor = DataProcessor(mock_config)
+    processor = DataProcessor(mock_config, spark)
     train, test = processor.split_data(test_size=0.5, random_state=42)
 
     # Assert that split_data returns two DataFrames
