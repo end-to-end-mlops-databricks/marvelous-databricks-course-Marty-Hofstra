@@ -1,5 +1,5 @@
 init:
-	uv venv -p 3.11.0 venv --python-preference managed && \
+	uv venv -p 3.11 venv --python-preference managed && \
 	source venv/bin/activate && \
 	uv pip install -r pyproject.toml --all-extras && \
 	uv lock
