@@ -23,4 +23,24 @@ Note: the DBR has to be 15.4 or higher, otherwise it will conflict with the `dat
 The `housing_prices` package (as a .whl) can be created and stored in DBFS by running `make build_and_store_whl dbfs_path=${dbfs_path}`, where `${dbfs_path}` is the path to the volume in which you want to store the whl.
 
 #### Usage
-In the cluster configuration, click on `Libraries` and then `Install new`, select `Volumes` and navigate to the path where you stored the wheel.
+In the cluster configuration, click on `Libraries` and then `Install new`, select `Volumes` and navigate to the path where you stored the wheel. The package functionality can be imported with `import hotel_reservations`. An example of usage of the data processing functions is as follows:
+
+```
+with open("../../../project_config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+data_preprocessor = DataProcessor(config, spark)
+
+data_preprocessor.preprocess_data()
+
+train, test = data_preprocessor.split_data()
+
+X_features = list(set(config["cat_features"]) | set(config["num_features"]))
+
+X_train = train.select(X_features)
+X_test = test.select(X_features)
+Y_train = train.select(config["target"])
+Y_test = test.select(config["target"])
+
+display(X_train)
+```
