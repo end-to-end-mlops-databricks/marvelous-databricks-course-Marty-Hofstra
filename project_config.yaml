@@ -44,17 +44,22 @@ num_features:
     type: integer
     constraints:
       min: 0
+
 cat_features:
   type_of_meal_plan:
     type: string
     allowed_values: ["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
   required_car_parking_space:
     type: bool
+    allowed_values: [true, false]
+    encoding: [1, 0]
   room_type_reserved:
     type: string
     allowed_values: ["Room_Type 1", "Room_Type 2", "Room_Type 3", "Room_Type 4", "Room_Type 5", "Room_Type 6", "Room_Type 7"]
   repeated_guest:
     type: bool
+    allowed_values: [true, false]
+    encoding: [1, 0]
   market_segment_type:
     type: string
     allowed_values: ["Online", "Offline", "Complementary", "Corporate", "Aviation"]
