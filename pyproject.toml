@@ -17,7 +17,6 @@ dependencies = ["lightgbm>=4.5.0, <5",
                 "databricks-feature-engineering>=0.6, <1",
                 "toml>=0.10.2, <11",
                 "PyYAML>=6.0, <7",
-                "pathlib>=1.0.0, <2",
                 "pre-commit>=3.0.0, <4",
                 "pyspark==3.5.0"]
 
