@@ -1,13 +1,13 @@
 import logging
 
-import yaml  # type: ignore
-from databricks.connect import DatabricksSession
+import yaml
+from pyspark.sql import SparkSession
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 
 
-def main():
-    spark = DatabricksSession.builder.getOrCreate()
+def preprocessing():
+    spark = SparkSession.builder.getOrCreate()
 
     try:
         with open("../../../project_config.yaml", "r") as file:
@@ -40,4 +40,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    preprocessing()

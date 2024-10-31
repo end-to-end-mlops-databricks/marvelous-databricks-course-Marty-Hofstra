@@ -3,17 +3,25 @@ from unittest.mock import patch
 import pytest
 from pyspark.sql import SparkSession
 
-from src.hotel_reservations.data_processing.data_processor import DataProcessor
+from hotel_reservations.data_processing.data_processor import DataProcessor
+from hotel_reservations.types.project_config_types import ProjectConfigType
 from test.utils import spark_session
 
 spark = spark_session
 
-mock_config = {
+mock_config: ProjectConfigType = {
     "catalog": "my_catalog",
     "schema": "my_schema",
     "table_name": "my_table",
-    "num_features": ["age", "income"],
-    "cat_features": ["gender", "city"],
+    "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
+    "num_features": {
+        "age": {"type": "integer", "constraints": {"min": 0, "max": 100}},
+        "income": {"type": "float", "constraints": {"min": 0.0}},
+    },
+    "cat_features": {
+        "gender": {"type": "string", "allowed_values": ["male", "female", "other"]},
+        "city": {"type": "string", "allowed_values": ["New York", "Los Angeles", "Chicago"]},
+    },
     "target": "purchased",
 }
 

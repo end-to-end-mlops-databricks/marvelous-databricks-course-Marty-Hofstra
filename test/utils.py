@@ -11,8 +11,7 @@ from pytest import fixture, mark, param
 def spark_session() -> SparkSession:
     """Creates a SparkSession fixture for the entire test session.
 
-    Since we're using databricks-connect, a DatabricksSession is used. Ensure that you've added your cluster_id to the DEFAULT databricks profile in the .databrickscfg file.
-
+    Even though we're using databricks-connect, a SparkSession is used. This is due to the fact that a DatabricksSession has limitations when working with certain PySpark functionality (e.g. pyspark.ml.features)
     If you do not want to test Spark-related functionality, you can skip these
     tests by running:
         `python -m pytest -m "not spark"`
