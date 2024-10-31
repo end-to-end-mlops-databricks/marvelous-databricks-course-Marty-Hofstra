@@ -1,8 +1,10 @@
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
 from pyspark.sql import DataFrame, SparkSession
+
+from hotel_reservations.types.project_config_types import ProjectConfigType
 
 
 class DataProcessor:
@@ -12,7 +14,7 @@ class DataProcessor:
 
     Attributes
     ----------
-    config : Dict[str, List[str]]
+    config : ProjectConfigType
         Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
 
     Methods
@@ -25,17 +27,15 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(
-        self, config: Dict[str, str | List[str] | Dict[str, int | float]], spark: SparkSession | None = None
-    ) -> None:
+    def __init__(self, config: ProjectConfigType, spark: SparkSession | None = None) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
-            config (Dict[str, List[str]]): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+            config ProjectConfigType: Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession | None): The spark session is required for running Spark functionality outside of Databricks. Defaults to None.
         """
         self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
-        self.config: Dict[str, List[str]] = config
+        self.config: ProjectConfigType = config
         self.X: DataFrame = None
         self.y: DataFrame = None
         self.preprocessor: Pipeline = None
@@ -52,7 +52,7 @@ class DataProcessor:
             DataFrame: The data in PySpark format
         """
         three_level_table_name = f"{catalog}.{schema}.{table_name}"
-        return spark.read.table(three_level_table_name)
+        return spark.read.table(three_level_table_name)  # type: ignore
 
     def preprocess_data(self) -> None:
         """Preprocessing of data, consisting of the following steps:

@@ -1,6 +1,6 @@
 import logging
 
-import yaml
+import yaml  # type: ignore
 from databricks.connect import DatabricksSession
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
