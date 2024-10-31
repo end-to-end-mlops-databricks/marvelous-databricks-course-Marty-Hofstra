@@ -34,8 +34,8 @@ class DataProcessor:
             config (ProjectConfigType): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
         self.config: ProjectConfigType = config
+        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
         self.preprocessor: Optional[Pipeline] = None
