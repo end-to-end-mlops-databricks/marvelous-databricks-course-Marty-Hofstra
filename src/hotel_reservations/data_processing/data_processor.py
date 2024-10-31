@@ -48,11 +48,18 @@ class DataProcessor:
             schema (str): Schema/database from which the table is read.
             table_name (str): The name of the table to read from
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
+
+        Raises:
+            ValueError: If the table in UC cannot be read
+
         Returns:
             DataFrame: The data in PySpark format
         """
         three_level_table_name = f"{catalog}.{schema}.{table_name}"
-        return spark.read.table(three_level_table_name)
+        try:
+            return spark.read.table(three_level_table_name)
+        except Exception as e:
+            raise ValueError(f"Failed to read table '{three_level_table_name}': {str(e)}") from e
 
     def preprocess_data(self) -> None:
         """Preprocessing of data, consisting of the following steps:

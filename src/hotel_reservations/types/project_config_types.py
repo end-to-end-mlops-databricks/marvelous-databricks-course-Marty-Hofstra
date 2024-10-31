@@ -1,4 +1,4 @@
-from typing import List, Literal, TypedDict, Union
+from typing import List, Literal, Optional, TypedDict, Union
 
 
 class Constraints(TypedDict, total=False):
@@ -23,17 +23,29 @@ class NumFeature(TypedDict):
     constraints: Constraints
 
 
-class CatFeature(TypedDict, total=False):
+class StringFeature(TypedDict):
     """
     Describes a categorical feature in the dataset.
-    - `type`: Indicates the data type, either 'string' or 'bool'.
+    - `type`: Indicates the data type.
     - `allowed_values`: Lists permissible values for string features, if any.
     - `constraints`: Optional constraints for integer-based categorical values.
     """
 
-    type: Literal["string", "bool"]
-    allowed_values: List[str]
-    constraints: Constraints
+    type: Literal["string"]
+    allowed_values: Optional[List[str]]
+    constraints: Optional[Constraints]  # for ordinal categories
+
+
+class BoolFeature(TypedDict):
+    """
+    Describes a boolean feature in the dataset.
+    - `type`: Indicates the data type, either 'string' or 'bool'.
+    """
+
+    type: Literal["bool"]
+
+
+CatFeature = Union[StringFeature, BoolFeature]
 
 
 class Parameters(TypedDict):

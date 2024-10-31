@@ -12,13 +12,15 @@ def preprocessing():
     try:
         with open("../../../project_config.yaml", "r") as file:
             config = yaml.safe_load(file)
-        logging.info("Configuration file loaded successfully.")
+        logging.info("Configuration file loaded successfully from project_config.yaml")
     except FileNotFoundError as e:
-        logging.error(f"Configuration file not found: {e}")
-        return
+        msg = f"Configuration file not found. Ensure project_config.yaml exists in the project root: {e}"
+        logging.error(msg)
+        raise FileNotFoundError(msg) from e
     except Exception as e:
-        logging.error(f"Error loading configuration file: {e}")
-        return
+        msg = f"Failed to parse configuration file. Ensure it's valid YAML: {e}"
+        logging.error(msg)
+        raise ValueError(msg) from e
 
     data_preprocessor = DataProcessor(config, spark)
 
