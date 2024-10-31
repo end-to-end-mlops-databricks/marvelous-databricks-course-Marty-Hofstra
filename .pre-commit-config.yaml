@@ -20,3 +20,4 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-PyYAML]
+        args: [--python-version=3.11]
