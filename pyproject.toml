@@ -3,7 +3,7 @@ name = "hotel_reservations"
 version = "0.0.1"
 description = "Hotel reservations package"
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = "==3.11"
 dependencies = ["lightgbm>=4.5.0, <5",
                 "scikit-learn>=1.5.1, <2",
                 "cloudpickle>=3.0.0, <4",

@@ -14,14 +14,37 @@ mock_config: ProjectConfigType = {
     "catalog": "my_catalog",
     "schema": "my_schema",
     "table_name": "my_table",
-    "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
+    "parameters": {
+        "learning_rate": 0.01,
+        "n_estimators": 1000,
+        "max_depth": 6,
+    },
     "num_features": {
-        "age": {"type": "integer", "constraints": {"min": 0, "max": 100}},
-        "income": {"type": "float", "constraints": {"min": 0.0}},
+        "age": {
+            "type": "integer",
+            "constraints": {
+                "min": 0,
+                "max": 100,
+            },
+        },
+        "income": {
+            "type": "float",
+            "constraints": {
+                "min": 0.0,
+            },
+        },
     },
     "cat_features": {
-        "gender": {"type": "string", "allowed_values": ["male", "female", "other"]},
-        "city": {"type": "string", "allowed_values": ["New York", "Los Angeles", "Chicago"]},
+        "gender": {
+            "type": "string",
+            "allowed_values": ["male", "female", "other"],
+            "constraints": None,  # No constraints for ordinal values
+        },
+        "city": {
+            "type": "string",
+            "allowed_values": ["New York", "Los Angeles", "Chicago"],
+            "constraints": None,  # No constraints for ordinal values
+        },
     },
     "target": "purchased",
 }
