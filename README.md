@@ -1,5 +1,5 @@
 <h1 align="center">
-Marvelous MLOps End-to-end MLOps with Databricks Marty-Hofstra repo
+Hotel reservations package by Marty-Hofstra
 
 ## Description
 This repo contains functionality for modelling the hotel reservations dataset, this can be [found here](https://www.kaggle.com/datasets/ahsan81/hotel-reservations-classification-dataset)

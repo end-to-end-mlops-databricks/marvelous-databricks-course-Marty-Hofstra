@@ -1,7 +1,7 @@
 [project]
 name = "hotel_reservations"
 version = "0.0.1"
-description = "Hotel reservations package for MLOps with Databricks"
+description = "Hotel reservations package"
 readme = "README.md"
 requires-python = "==3.11.*"
 dependencies = ["lightgbm>=4.5.0, <5",
