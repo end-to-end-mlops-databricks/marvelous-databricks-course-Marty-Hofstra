@@ -1,7 +1,8 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pyspark.sql import SparkSession
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.types.project_config_types import ProjectConfigType
@@ -69,3 +70,31 @@ def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     # Test split sizes
     total_rows = mock_dataframe.count()
     assert train.count() + test.count() == total_rows
+
+
+@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+def test_split_data_value_error_test_size_low(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
+    mock_read_UC_spark.return_value = mock_dataframe
+
+    processor = DataProcessor(mock_config, spark)
+
+    with pytest.raises(ValueError, match="test_size must be between 0 and 1, got"):
+        processor.split_data(test_size=0)
+
+
+@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
+    mock_read_UC_spark.return_value = mock_dataframe
+
+    processor = DataProcessor(mock_config, spark)
+
+    with pytest.raises(ValueError, match="test_size must be between 0 and 1, got"):
+        processor.split_data(test_size=1.5)
+
+
+def test_split_data_value_error_empty_dataframe(spark: SparkSession):
+    schema = StructType([StructField("col1", IntegerType(), True), StructField("col2", StringType(), True)])
+
+    mock_processor = MagicMock()
+
+    mock_processor.df = spark.createDataFrame([], schema)

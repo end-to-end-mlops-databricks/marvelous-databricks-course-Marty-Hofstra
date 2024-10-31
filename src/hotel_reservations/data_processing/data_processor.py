@@ -101,9 +101,18 @@ class DataProcessor:
             test_size (float, optional): Proportion of the input data to be part of the test set. Defaults to 0.2.
             random_state (int, optional): Value of the state. Defaults to 42.
 
+        Raises:
+            ValueError: If `test_size` is not between 0 and 1.
+
         Returns:
             Tuple[DataFrame, DataFrame]: The input data split up into a training and test set
         """
+        if not 0 < test_size < 1:
+            raise ValueError(f"test_size must be between 0 and 1, got {test_size}")
+
+        if self.df.isEmpty():
+            raise ValueError("Cannot split an empty DataFrame")
+
         train: DataFrame
         test: DataFrame
         train, test = self.df.randomSplit([1.0 - test_size, test_size], seed=random_state)
