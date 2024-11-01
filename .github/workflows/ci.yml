@@ -26,4 +26,4 @@ jobs:
 
       - name: Run unit tests
         run: |
-          uv pytest .
+          uv run pytest .
