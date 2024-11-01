@@ -10,7 +10,7 @@ def preprocessing():
     spark = SparkSession.builder.getOrCreate()
 
     try:
-        with open("../../../project_config.yaml", "r") as file:
+        with open("project_config.yaml", "r") as file:
             config = yaml.safe_load(file)
         logging.info("Configuration file loaded successfully from project_config.yaml")
     except FileNotFoundError as e:

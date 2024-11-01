@@ -72,30 +72,42 @@ class DataProcessor:
         target: str = self.config["target"]
         self.df = self.df.dropna(subset=[target])
 
+        # Extracting input column names from the config
+        num_feature_cols = list(self.config["num_features"].keys())
+        cat_feature_cols = list(self.config["cat_features"].keys())
+
+        # Set up the imputer
         numeric_imputer: Imputer = Imputer(
-            inputCols=self.config["num_features"], outputCols=[f"{c}_imputed" for c in self.config["num_features"]]
+            inputCols=num_feature_cols, outputCols=[f"{c}_imputed" for c in num_feature_cols]
         )
 
+        # Create the scaler
         scaler: StandardScaler = StandardScaler(inputCol="features_num", outputCol="scaled_features")
 
+        # StringIndexer and OneHotEncoder for categorical features
         indexers: List[StringIndexer] = [
-            StringIndexer(inputCol=col, outputCol=f"{col}_indexed") for col in self.config["cat_features"]
+            StringIndexer(inputCol=col, outputCol=f"{col}_indexed") for col in cat_feature_cols
         ]
         encoders: List[OneHotEncoder] = [
-            OneHotEncoder(inputCol=f"{col}_indexed", outputCol=f"{col}_encoded") for col in self.config["cat_features"]
+            OneHotEncoder(inputCol=f"{col}_indexed", outputCol=f"{col}_encoded") for col in cat_feature_cols
         ]
+
+        # Assemble numeric features
         assembler_numeric: VectorAssembler = VectorAssembler(
-            inputCols=[f"{c}_imputed" for c in self.config["num_features"]], outputCol="features_num"
+            inputCols=[f"{c}_imputed" for c in num_feature_cols], outputCol="features_num"
         )
 
+        # Assemble categorical features
         assembler_categorical: VectorAssembler = VectorAssembler(
-            inputCols=[f"{col}_encoded" for col in self.config["cat_features"]], outputCol="features_cat"
+            inputCols=[f"{col}_encoded" for col in cat_feature_cols], outputCol="features_cat"
         )
 
+        # Combine numeric and categorical features
         assembler_all: VectorAssembler = VectorAssembler(
             inputCols=["scaled_features", "features_cat"], outputCol="features"
         )
 
+        # Building the pipeline
         stages: List = (
             [numeric_imputer, assembler_numeric, scaler] + indexers + encoders + [assembler_categorical, assembler_all]
         )

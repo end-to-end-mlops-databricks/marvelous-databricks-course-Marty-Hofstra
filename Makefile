@@ -1,8 +1,5 @@
 init:
-	uv venv -p 3.11 venv --python-preference managed && \
-	source venv/bin/activate && \
-	uv pip install -r pyproject.toml --all-extras && \
-	uv lock
+	uv sync $(if $(extra),--extra=$(extra))
 
 get_package_name:
 	@python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])"

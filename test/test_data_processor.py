@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from pyspark.sql import SparkSession
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+from pyspark.testing import assertDataFrameEqual
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.types.project_config_types import ProjectConfigType
@@ -61,7 +61,7 @@ def mock_dataframe(spark: SparkSession):
 
 
 # Test case for the __init__ and load function
-@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch.object(DataProcessor, "read_UC_spark")
 def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
@@ -75,7 +75,7 @@ def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSes
 
 
 # Test the split_data function
-@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch.object(DataProcessor, "read_UC_spark")
 def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
@@ -95,7 +95,7 @@ def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     assert train.count() + test.count() == total_rows
 
 
-@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch.object(DataProcessor, "read_UC_spark")
 def test_split_data_value_error_test_size_low(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
@@ -105,7 +105,7 @@ def test_split_data_value_error_test_size_low(mock_read_UC_spark, mock_dataframe
         processor.split_data(test_size=0)
 
 
-@patch("src.hotel_reservations.data_processing.data_processor.DataProcessor.read_UC_spark")
+@patch.object(DataProcessor, "read_UC_spark")
 def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     mock_read_UC_spark.return_value = mock_dataframe
 
@@ -115,9 +115,25 @@ def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_datafram
         processor.split_data(test_size=1.5)
 
 
-def test_split_data_value_error_empty_dataframe(spark: SparkSession):
-    schema = StructType([StructField("col1", IntegerType(), True), StructField("col2", StringType(), True)])
+@patch.object(DataProcessor, "read_UC_spark")
+def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
+    data_missing_target = [
+        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": None},
+        {"age": 30, "income": 60000, "gender": "F", "city": "LA", "purchased": None},
+    ]
+    data_non_missing_target = [
+        {"age": None, "income": 70000, "gender": "F", "city": None, "purchased": 1},
+        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": 2},
+    ]
 
-    mock_processor = MagicMock()
+    mock_data = data_missing_target + data_non_missing_target
+    sparse_df = spark_session.createDataFrame(mock_data)
+    mock_read_UC_spark.return_value = sparse_df
 
-    mock_processor.df = spark.createDataFrame([], schema)
+    processor = DataProcessor(mock_config, spark)
+    processor.preprocess_data()
+
+    expected = spark_session.createDataFrame(data_non_missing_target)
+
+    assert processor.df.count() == 2
+    assertDataFrameEqual(processor.df, expected)
