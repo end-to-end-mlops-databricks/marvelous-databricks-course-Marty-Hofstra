@@ -5,48 +5,29 @@ from pyspark.sql import SparkSession
 from pyspark.testing import assertDataFrameEqual
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
-from hotel_reservations.types.project_config_types import ProjectConfigType
+from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
 from test.utils import spark_session
 
 spark = spark_session
 
-mock_config: ProjectConfigType = {
+mock_config: dict = {
     "catalog": "my_catalog",
     "schema": "my_schema",
-    "table_name": "my_table",
-    "parameters": {
-        "learning_rate": 0.01,
-        "n_estimators": 1000,
-        "max_depth": 6,
-    },
+    "table_name": "hotel_reservations",
+    "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
     "num_features": {
-        "age": {
-            "type": "integer",
-            "constraints": {
-                "min": 0,
-                "max": 100,
-            },
-        },
-        "income": {
-            "type": "float",
-            "constraints": {
-                "min": 0.0,
-            },
-        },
+        "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
+        "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
+        # Add other numerical features similarly
     },
     "cat_features": {
-        "gender": {
-            "type": "string",
-            "allowed_values": ["male", "female", "other"],
-            "constraints": None,  # No constraints for ordinal values
-        },
-        "city": {
-            "type": "string",
-            "allowed_values": ["New York", "Los Angeles", "Chicago"],
-            "constraints": None,  # No constraints for ordinal values
-        },
+        "type_of_meal_plan": CatFeature(
+            type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
+        ),
+        "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
+        # Add other categorical features similarly
     },
-    "target": "purchased",
+    "target": "booking_status",
 }
 
 
@@ -118,12 +99,12 @@ def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_datafram
 @patch.object(DataProcessor, "read_UC_spark")
 def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
     data_missing_target = [
-        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": None},
-        {"age": 30, "income": 60000, "gender": "F", "city": "LA", "purchased": None},
+        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "booking_status": None},
+        {"age": 30, "income": 60000, "gender": "F", "city": "LA", "booking_status": None},
     ]
     data_non_missing_target = [
-        {"age": None, "income": 70000, "gender": "F", "city": None, "purchased": 1},
-        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": 2},
+        {"age": None, "income": 70000, "gender": "F", "city": None, "booking_status": 1},
+        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "booking_status": 2},
     ]
 
     mock_data = data_missing_target + data_non_missing_target

@@ -1,54 +1,25 @@
-from typing import List, Literal, Optional, TypedDict, Union
+from typing import Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
 
 
-class Constraints(TypedDict, total=False):
-    """
-    Specifies optional constraints for a feature, such as minimum or maximum values.
-    - `min`: The minimum allowed value for the feature.
-    - `max`: The maximum allowed value for the feature.
-    """
-
-    min: Union[int, float]
-    max: Union[int, float]
+class Constraints(BaseModel):
+    min: Optional[Union[int, float]]  # Using Union for both int and float types
+    max: Optional[Union[int, float]]  # Optional in case it is not defined
 
 
-class NumFeature(TypedDict):
-    """
-    Describes a numerical feature in the dataset.
-    - `type`: Indicates the data type, either 'integer' or 'float'.
-    - `constraints`: Optional constraints for the numerical feature, like `min` or `max`.
-    """
-
-    type: Literal["integer", "float"]
+class NumFeature(BaseModel):
+    type: str
     constraints: Constraints
 
 
-class StringFeature(TypedDict):
-    """
-    Describes a categorical feature in the dataset.
-    - `type`: Indicates the data type.
-    - `allowed_values`: Lists permissible values for string features, if any.
-    - `constraints`: Optional constraints for integer-based categorical values.
-    """
-
-    type: Literal["string"]
-    allowed_values: Optional[List[str]]
-    constraints: Optional[Constraints]  # for ordinal categories
+class CatFeature(BaseModel):
+    type: str
+    allowed_values: List[Union[str, bool]]  # Can include strings or booleans
+    encoding: Optional[List[int]]  # Optional encoding
 
 
-class BoolFeature(TypedDict):
-    """
-    Describes a boolean feature in the dataset.
-    - `type`: Indicates the data type, either 'string' or 'bool'.
-    """
-
-    type: Literal["bool"]
-
-
-CatFeature = Union[StringFeature, BoolFeature]
-
-
-class Parameters(TypedDict):
+class Parameters(BaseModel):
     """
     Holds model parameters.
     - `learning_rate`: Learning rate for the model (e.g., 0.01).
@@ -56,16 +27,16 @@ class Parameters(TypedDict):
     - `max_depth`: Maximum tree depth (e.g., 6).
     """
 
-    learning_rate: float
-    n_estimators: int
-    max_depth: int
+    learning_rate: float = Field(..., gt=0)  # Use Field to set constraints
+    n_estimators: int = Field(..., gt=0)  # Use Field to set constraints
+    max_depth: int = Field(..., gt=0)  # Use Field to set constraints
 
 
-class ProjectConfigType(TypedDict):
+class ProjectConfig(BaseModel):
     """
     Defines the configuration for the project.
     - `catalog`: The data catalog name.
-    - `schema`: The schema where the dataset resides.
+    - `db_schema`: The schema where the dataset resides. Alias to `schema`
     - `table_name`: The table name of the dataset.
     - `parameters`: Model parameters such as learning rate and estimators.
     - `num_features`: Numerical features with details on type and constraints.
@@ -74,9 +45,9 @@ class ProjectConfigType(TypedDict):
     """
 
     catalog: str
-    schema: str
+    db_schema: str = Field(..., alias="schema")
     table_name: str
     parameters: Parameters
-    num_features: dict[str, NumFeature]
-    cat_features: dict[str, CatFeature]
+    num_features: Dict[str, NumFeature]
+    cat_features: Dict[str, CatFeature]
     target: str

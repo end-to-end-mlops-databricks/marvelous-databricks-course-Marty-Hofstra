@@ -8,7 +8,7 @@ from hotel_reservations.utils import check_repo_info, get_error_metrics, open_co
 
 
 def basic_model():
-    config = open_config("../../../../project_config.yaml")
+    config = open_config("../../../../project_config.yaml").dict()
 
     mlflow.set_tracking_uri("databricks")
     mlflow.set_registry_uri("databricks-uc")
@@ -18,7 +18,8 @@ def basic_model():
     preprocessing_stages, train, test = preprocessing()
 
     git_branch, git_sha = check_repo_info(
-        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra"
+        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra",
+        dbutils,  # type: ignore # noqa: F821
     )
 
     pipeline = Pipeline(
@@ -45,7 +46,7 @@ def basic_model():
         mlflow.log_metric("mse", error_metrics["mse"])
         mlflow.log_metric("mae", error_metrics["mae"])
         mlflow.log_metric("r2_score", error_metrics["r2"])
-        signature = infer_signature(model_input=train, model_output=predictions)
+        signature = infer_signature(model_input=train, model_output=predictions.select("prediction"))
 
         mlflow.spark.log_model(spark_model=model, artifact_path="gbt-pipeline-model", signature=signature)
 

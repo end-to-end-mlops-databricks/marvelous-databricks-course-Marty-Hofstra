@@ -7,10 +7,10 @@ import yaml
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame
 
-from hotel_reservations.types.project_config_types import ProjectConfigType
+from hotel_reservations.types.project_config_types import ProjectConfig
 
 
-def open_config(path: str) -> ProjectConfigType:
+def open_config(path: str) -> ProjectConfig:
     """Opens the project config file based on the path given
 
     Args:
@@ -21,7 +21,7 @@ def open_config(path: str) -> ProjectConfigType:
         ValueError: When the file is not valid YAML
 
     Returns:
-        ProjectConfigType: Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+        ProjectConfig: Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
     """
     try:
         with open(path, "r") as file:
@@ -36,7 +36,7 @@ def open_config(path: str) -> ProjectConfigType:
         logging.error(msg)
         raise ValueError(msg) from e
 
-    return config
+    return ProjectConfig(**config)
 
 
 def get_error_metrics(

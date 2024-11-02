@@ -6,28 +6,48 @@ import pytest
 import requests
 import yaml
 
+from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
 from hotel_reservations.utils import check_repo_info, get_error_metrics, open_config
 from test.utils import spark_session
 
+mock_config: dict = {
+    "catalog": "my_catalog",
+    "schema": "my_schema",
+    "table_name": "hotel_reservations",
+    "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
+    "num_features": {
+        "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
+        "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
+        # Add other numerical features similarly
+    },
+    "cat_features": {
+        "type_of_meal_plan": CatFeature(
+            type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
+        ),
+        "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
+        # Add other categorical features similarly
+    },
+    "target": "booking_status",
+}
+
 
 def test_open_config_success():
-    # Define a valid config dictionary that would match the ProjectConfigType structure.
-    mock_config = {
-        "catalog": "my_catalog",
-        "schema": "my_schema",
-        "model_parameters": {"param1": 0.1},
-        "numerical_features": ["feature1", "feature2"],
-        "categorical_features": ["cat_feature1", "cat_feature2"],
-        "target_variable": "target",
-    }
-
     # Convert the mock config to YAML and mock the open function to read this as file content.
     mock_yaml_content = yaml.dump(mock_config)
 
     with patch("builtins.open", mock_open(read_data=mock_yaml_content)):
         with patch("yaml.safe_load", return_value=mock_config):
+            # Call the open_config function to read the configuration
             config = open_config("path/to/config.yaml")
-            assert config == mock_config  # Check that the config matches the expected dictionary
+
+            # Perform assertions to ensure the values match
+            assert config.catalog == mock_config["catalog"]
+            assert config.db_schema == mock_config["schema"]
+            assert config.table_name == mock_config["table_name"]
+            assert config.parameters == mock_config["parameters"]
+            assert config.num_features == mock_config["num_features"]
+            assert config.cat_features == mock_config["cat_features"]
+            assert config.target == mock_config["target"]
 
 
 def test_open_config_file_not_found():
@@ -45,8 +65,6 @@ def test_open_config_invalid_yaml():
 
 
 def test_open_config_logging(caplog):
-    # Test if the logging occurs as expected when loading the file successfully.
-    mock_config = {"catalog": "catalog_name"}  # Minimal valid config for simplicity
     mock_yaml_content = yaml.dump(mock_config)
 
     with patch("builtins.open", mock_open(read_data=mock_yaml_content)):

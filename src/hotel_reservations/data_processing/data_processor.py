@@ -4,8 +4,6 @@ from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
 from pyspark.sql import DataFrame, SparkSession
 
-from hotel_reservations.types.project_config_types import ProjectConfigType
-
 
 class DataProcessor:
     """A class to preprocess the input data
@@ -27,14 +25,14 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: ProjectConfigType, spark: SparkSession) -> None:
+    def __init__(self, config: dict, spark: SparkSession) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
-            config (ProjectConfigType): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+            config (dict): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
-        self.config: ProjectConfigType = config
+        self.config: dict = config
         self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
