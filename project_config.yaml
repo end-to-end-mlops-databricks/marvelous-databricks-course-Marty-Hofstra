@@ -1,0 +1,82 @@
+catalog: users # Change this to the catalog you're using
+schema: martijn_hofstra # Change this to the schema where the hotel reservations dataset resides
+table_name: hotel_reservations
+
+parameters:
+  learning_rate: 0.01
+  n_estimators: 1000
+  max_depth: 6
+
+num_features:
+  no_of_adults:
+    type: integer
+    constraints:
+      min: 0
+  no_of_children:
+    type: integer
+    constraints:
+      min: 0
+  no_of_weekend_nights:
+    type: integer
+    constraints:
+      min: 0
+  no_of_week_nights:
+    type: integer
+    constraints:
+      min: 0
+  no_of_special_requests:
+    type: integer
+    constraints:
+      min: 0
+  avg_price_per_room:
+    type: float
+    constraints:
+      min: 0.0
+  no_of_previous_bookings_not_canceled:
+    type: integer
+    constraints:
+      min: 0
+  no_of_previous_cancellations:
+    type: integer
+    constraints:
+      min: 0
+  lead_time:
+    type: integer
+    constraints:
+      min: 0
+
+cat_features:
+  type_of_meal_plan:
+    type: string
+    allowed_values: ["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
+  required_car_parking_space:
+    type: bool
+    allowed_values: [true, false]
+    encoding: [1, 0]
+  room_type_reserved:
+    type: string
+    allowed_values: ["Room_Type 1", "Room_Type 2", "Room_Type 3", "Room_Type 4", "Room_Type 5", "Room_Type 6", "Room_Type 7"]
+  repeated_guest:
+    type: bool
+    allowed_values: [true, false]
+    encoding: [1, 0]
+  market_segment_type:
+    type: string
+    allowed_values: ["Online", "Offline", "Complementary", "Corporate", "Aviation"]
+  arrival_date:
+    type: integer
+    constraints:
+      min: 1
+      max: 31
+  arrival_month:
+    type: integer
+    constraints:
+      min: 1
+      max: 12
+  arrival_year:
+    type: integer
+    constraints:
+      min: 2017
+      max: 2018
+
+target: booking_status
