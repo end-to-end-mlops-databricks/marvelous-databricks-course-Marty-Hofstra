@@ -65,18 +65,12 @@ cat_features:
     allowed_values: ["Online", "Offline", "Complementary", "Corporate", "Aviation"]
   arrival_date:
     type: integer
-    constraints:
-      min: 1
-      max: 31
+    allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
   arrival_month:
     type: integer
-    constraints:
-      min: 1
-      max: 12
+    allowed_values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
   arrival_year:
     type: integer
-    constraints:
-      min: 2017
-      max: 2018
+    allowed_values: [2017, 2018]
 
 target: booking_status

@@ -33,7 +33,7 @@ class DataProcessor:
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
         self.config: dict = config
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
+        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["db_schema"], config["table_name"], spark)
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
         self.preprocessor: Optional[Pipeline] = None
