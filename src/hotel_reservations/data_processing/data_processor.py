@@ -61,13 +61,16 @@ class DataProcessor:
         except Exception as e:
             raise ValueError(f"Failed to read table '{three_level_table_name}': {str(e)}") from e
 
-    def preprocess_data(self) -> None:
+    def preprocess_data(self) -> List:
         """Preprocessing of data, consisting of the following steps:
         - Imputation of missing values
         - Handling of categorical features
         - Use of the VectorAssembler to combine numeric and categorical features
         - Combine all numeric and categorical features into one feature column
         - Build the preprocessing pipeline
+
+        Returns:
+            List: Preprocessing stages required for the PySpark ML pipeline
         """
         target: str = self.config["target"]
         self.df = self.df.dropna(subset=[target])
@@ -75,6 +78,8 @@ class DataProcessor:
         # Extracting input column names from the config
         num_feature_cols = list(self.config["num_features"].keys())
         cat_feature_cols = list(self.config["cat_features"].keys())
+
+        target_indexer: StringIndexer = StringIndexer(inputCol=target, outputCol="label")
 
         # Set up the imputer
         numeric_imputer: Imputer = Imputer(
@@ -108,10 +113,14 @@ class DataProcessor:
         )
 
         # Building the pipeline
-        stages: List = (
-            [numeric_imputer, assembler_numeric, scaler] + indexers + encoders + [assembler_categorical, assembler_all]
+        preprocessing_stages: List = (
+            [target_indexer, numeric_imputer, assembler_numeric, scaler]
+            + indexers
+            + encoders
+            + [assembler_categorical, assembler_all]
         )
-        self.preprocessor = Pipeline(stages=stages)
+
+        return preprocessing_stages
 
     def split_data(self, test_size: float = 0.2, random_state: int = 42) -> Tuple[DataFrame, DataFrame]:
         """Splits the DataFrame into training and test sets

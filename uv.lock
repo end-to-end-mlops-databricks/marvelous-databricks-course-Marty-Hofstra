@@ -715,6 +715,7 @@ dependencies = [
     { name = "cffi" },
     { name = "cloudpickle" },
     { name = "databricks-feature-engineering" },
+    { name = "gitpython" },
     { name = "lightgbm" },
     { name = "matplotlib" },
     { name = "mlflow" },
@@ -738,6 +739,7 @@ dev = [
     { name = "pytest" },
 ]
 test = [
+    { name = "pip" },
     { name = "pyspark" },
     { name = "pytest" },
 ]
@@ -749,6 +751,7 @@ requires-dist = [
     { name = "databricks-connect", marker = "extra == 'dev'", specifier = ">=15.4.1,<16" },
     { name = "databricks-feature-engineering", specifier = ">=0.6,<1" },
     { name = "databricks-sdk", marker = "extra == 'dev'", specifier = ">=0.32.0,<0.33" },
+    { name = "gitpython", specifier = ">=3.1.43,<4" },
     { name = "hotel-reservations", extras = ["test"], marker = "extra == 'dev'" },
     { name = "ipykernel", marker = "extra == 'dev'", specifier = ">=6.29.5,<7" },
     { name = "lightgbm", specifier = ">=4.5.0,<5" },
@@ -757,6 +760,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26.4,<2" },
     { name = "pandas", specifier = ">=2.2.2,<3" },
     { name = "pip", marker = "extra == 'dev'", specifier = ">=24.2" },
+    { name = "pip", marker = "extra == 'test'", specifier = ">=24.2" },
     { name = "pre-commit", specifier = ">=3.0.0,<4" },
     { name = "pyarrow", specifier = ">=15.0.2,<16" },
     { name = "pyspark", marker = "extra == 'test'", specifier = "==3.5.0" },
