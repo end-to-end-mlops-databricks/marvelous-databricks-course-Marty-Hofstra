@@ -1,30 +1,13 @@
+import json
 import logging
+from typing import Any, Optional
 
-import git
+import requests
 import yaml
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame
 
 from hotel_reservations.types.project_config_types import ProjectConfigType
-
-
-def get_git_sha() -> str:
-    """Retrieves the git sha, this is required for tagging the mlflow run
-
-    Returns:
-        str: Current git sha
-    """
-    repo = git.Repo(search_parent_directories=True)
-    sha = repo.head.object.hexsha
-
-    return sha
-
-
-def get_git_branch() -> str:
-    repo = git.Repo(search_parent_directories=True)
-    branch = repo.active_branch.name
-
-    return branch
 
 
 def open_config(path: str) -> ProjectConfigType:
@@ -86,3 +69,33 @@ def get_error_metrics(
     error_metrics = {"mse": mse, "mae": mae, "r2": r2}
 
     return error_metrics
+
+
+def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str, str]:
+    """Retrieves the current branch and sha in the Databricks Git repos, based on the repo path.
+
+    Args:
+        repo_path (str): Full path to the Databricks Git repo
+        dbutils (Optional[Any], optional): Databricks utilities, only available in Databricks. Defaults to None.
+
+    Returns:
+        git_branch (str)
+            Current git branch
+        git_sha (str)
+            Current git sha
+    """
+    nb_context = json.loads(dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson())  # type: ignore
+
+    api_url = nb_context["extraContext"]["api_url"]
+
+    api_token = nb_context["extraContext"]["api_token"]
+
+    db_repo_data = requests.get(
+        f"{api_url}/api/2.0/repos", headers={"Authorization": f"Bearer {api_token}"}, params={"path_prefix": repo_path}
+    ).json()
+
+    db_repo_branch = db_repo_data["repos"][0]["branch"]
+
+    db_repo_head_commit = db_repo_data["repos"][0]["head_commit_id"]
+
+    return db_repo_branch, db_repo_head_commit

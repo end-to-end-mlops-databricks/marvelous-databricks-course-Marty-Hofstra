@@ -18,7 +18,7 @@ dependencies = ["lightgbm>=4.5.0, <5",
                 "toml>=0.10.2, <11",
                 "PyYAML>=6.0, <7",
                 "pre-commit>=3.0.0, <4",
-                "gitpython>=3.1.43, <4"]
+                "requests>=2.31.0, <3"]
 
 [project.optional-dependencies]
 dev = ["databricks-connect>=15.4.1, <16",

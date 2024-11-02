@@ -4,7 +4,7 @@ from pyspark.ml import Pipeline
 from pyspark.ml.regression import GBTRegressor
 
 from hotel_reservations.data_processing.workflows.data_processing_task import preprocessing
-from hotel_reservations.utils import get_error_metrics, get_git_branch, get_git_sha, open_config
+from hotel_reservations.utils import check_repo_info, get_error_metrics, open_config
 
 
 def basic_model():
@@ -17,8 +17,9 @@ def basic_model():
 
     preprocessing_stages, train, test = preprocessing()
 
-    git_sha = get_git_sha()
-    git_branch = get_git_branch()
+    git_branch, git_sha = check_repo_info(
+        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra"
+    )
 
     pipeline = Pipeline(
         stages=preprocessing_stages
@@ -42,8 +43,8 @@ def basic_model():
 
         mlflow.log_param("model_type", "GBTRegressor with preprocessing")
         mlflow.log_metric("mse", error_metrics["mse"])
-        mlflow.log_metric("mae", {error_metrics["mae"]})
-        mlflow.log_metric("r2_score", {error_metrics["r2"]})
+        mlflow.log_metric("mae", error_metrics["mae"])
+        mlflow.log_metric("r2_score", error_metrics["r2"])
         signature = infer_signature(model_input=train, model_output=predictions)
 
         mlflow.spark.log_model(spark_model=model, artifact_path="gbt-pipeline-model", signature=signature)
@@ -54,7 +55,7 @@ def basic_model():
         tags={"git_sha": git_sha},
     )
 
-    print(f"The model version is {model_version}")
+    print(model_version)
 
 
 if __name__ == "__main__":

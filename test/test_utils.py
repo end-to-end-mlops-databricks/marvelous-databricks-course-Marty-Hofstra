@@ -1,10 +1,12 @@
+import json
 import logging
-from unittest.mock import mock_open, patch
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
+import requests
 import yaml
 
-from hotel_reservations.utils import get_error_metrics, open_config
+from hotel_reservations.utils import check_repo_info, get_error_metrics, open_config
 from test.utils import spark_session
 
 
@@ -92,3 +94,70 @@ def test_get_error_metrics_missing_columns(spark):
 
     with pytest.raises(ValueError):
         get_error_metrics(df_missing_prediction, pred_col_name="prediction")
+
+
+def test_check_repo_info_success():
+    # Mock the dbutils object and its method calls
+    mock_dbutils = Mock()
+    mock_context_json = json.dumps(
+        {"extraContext": {"api_url": "https://mock.databricks-instance.com", "api_token": "mock_token"}}
+    )
+    mock_dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson.return_value = mock_context_json
+
+    # Mock the requests.get response
+    mock_response = Mock()
+    mock_response.json.return_value = {"repos": [{"branch": "main", "head_commit_id": "abc123def456"}]}
+
+    repo_path = "/Repos/mock-user/mock-repo"
+
+    with patch("requests.get", return_value=mock_response):
+        branch, sha = check_repo_info(repo_path, dbutils=mock_dbutils)
+
+        # Assert that the correct API endpoint was called with correct headers and params
+        requests.get.assert_called_once_with(
+            "https://mock.databricks-instance.com/api/2.0/repos",
+            headers={"Authorization": "Bearer mock_token"},
+            params={"path_prefix": repo_path},
+        )
+
+        # Assert that the branch and SHA returned match the mock data
+        assert branch == "main"
+        assert sha == "abc123def456"
+
+
+def test_check_repo_info_no_repo_found():
+    # Mock the dbutils object and its method calls
+    mock_dbutils = Mock()
+    mock_context_json = json.dumps(
+        {"extraContext": {"api_url": "https://mock.databricks-instance.com", "api_token": "mock_token"}}
+    )
+    mock_dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson.return_value = mock_context_json
+
+    # Mock the requests.get response to simulate no repository found
+    mock_response = Mock()
+    mock_response.json.return_value = {"repos": []}
+
+    repo_path = "/Repos/mock-user/non-existent-repo"
+
+    with patch("requests.get", return_value=mock_response):
+        with pytest.raises(IndexError):
+            check_repo_info(repo_path, dbutils=mock_dbutils)
+
+
+def test_check_repo_info_invalid_token():
+    # Mock the dbutils object and its method calls
+    mock_dbutils = Mock()
+    mock_context_json = json.dumps(
+        {"extraContext": {"api_url": "https://mock.databricks-instance.com", "api_token": "invalid_token"}}
+    )
+    mock_dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson.return_value = mock_context_json
+
+    # Mock the requests.get response to simulate an authentication error
+    mock_response = Mock()
+    mock_response.json.side_effect = requests.exceptions.HTTPError("401 Client Error: Unauthorized for url")
+
+    repo_path = "/Repos/mock-user/mock-repo"
+
+    with patch("requests.get", side_effect=mock_response.json.side_effect):
+        with pytest.raises(requests.exceptions.HTTPError):
+            check_repo_info(repo_path, dbutils=mock_dbutils)
