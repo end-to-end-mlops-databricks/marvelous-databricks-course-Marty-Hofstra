@@ -7,7 +7,7 @@ import requests
 import yaml
 
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
-from hotel_reservations.utils import check_repo_info, get_error_metrics, open_config
+from hotel_reservations.utils import adjust_predictions, check_repo_info, get_error_metrics, open_config
 from test.utils import spark_session
 
 mock_config: dict = {
@@ -179,3 +179,62 @@ def test_check_repo_info_invalid_token():
     with patch("requests.get", side_effect=mock_response.json.side_effect):
         with pytest.raises(requests.exceptions.HTTPError):
             check_repo_info(repo_path, dbutils=mock_dbutils)
+
+
+def test_adjust_predictions(spark):
+    # Sample data for testing
+    data = [(1,), (2,), (3,)]
+    df = spark.createDataFrame(data, ["prediction"])
+
+    # Adjust predictions with the default scale factor
+    adjusted_df = adjust_predictions(df)
+
+    # Collect results for assertion
+    adjusted_results = adjusted_df.collect()
+
+    # Expected results after applying the scale factor
+    expected_results = [(1 * 1.3,), (2 * 1.3,), (3 * 1.3,)]
+
+    # Assert the adjusted predictions are as expected
+    for result, expected in zip(adjusted_results, expected_results, strict=False):
+        assert result["prediction"] == expected[0]
+
+
+# Test function for adjust_predictions with custom scale factor
+def test_adjust_predictions_custom_scale_factor(spark):
+    # Sample data for testing
+    data = [(1,), (2,), (3,)]
+    df = spark.createDataFrame(data, ["prediction"])
+
+    # Adjust predictions with a custom scale factor
+    adjusted_df = adjust_predictions(df, scale_factor=2.0)
+
+    # Collect results for assertion
+    adjusted_results = adjusted_df.collect()
+
+    # Expected results after applying the scale factor
+    expected_results = [(1 * 2.0,), (2 * 2.0,), (3 * 2.0,)]
+
+    # Assert the adjusted predictions are as expected
+    for result, expected in zip(adjusted_results, expected_results, strict=False):
+        assert result["prediction"] == expected[0]
+
+
+# Test function for adjust_predictions with custom column name
+def test_adjust_predictions_custom_column(spark):
+    # Sample data for testing
+    data = [(1,), (2,), (3,)]
+    df = spark.createDataFrame(data, ["predicted_value"])
+
+    # Adjust predictions using a custom column name
+    adjusted_df = adjust_predictions(df, pred_col_name="predicted_value")
+
+    # Collect results for assertion
+    adjusted_results = adjusted_df.collect()
+
+    # Expected results after applying the scale factor
+    expected_results = [(1 * 1.3,), (2 * 1.3,), (3 * 1.3,)]
+
+    # Assert the adjusted predictions are as expected
+    for result, expected in zip(adjusted_results, expected_results, strict=False):
+        assert result["predicted_value"] == expected[0]

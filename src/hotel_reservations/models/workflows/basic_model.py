@@ -52,7 +52,7 @@ def basic_model():
 
     model_version = mlflow.register_model(
         model_uri=f"runs:/{run_id}/gbt-pipeline-model",
-        name=f"{config['catalog']}.{config['schema']}.hotel_reservations_model_basic",
+        name=f"{config['catalog']}.{config['db_schema']}.hotel_reservations_model_basic",
         tags={"git_sha": git_sha},
     )
 
