@@ -186,6 +186,24 @@ def test_check_repo_info_invalid_token():
             check_repo_info(repo_path, dbutils=mock_dbutils)
 
 
+def test_check_repo_info_rate_limit():
+    """Test handling of rate limit response."""
+    mock_dbutils = Mock()
+    mock_context_json = json.dumps(
+        {"extraContext": {"api_url": "https://mock.databricks-instance.com", "api_token": "mock_token"}}
+    )
+    mock_dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson.return_value = mock_context_json
+
+    mock_response = Mock()
+    mock_response.json.side_effect = requests.exceptions.HTTPError("429 Client Error: Too Many Requests")
+
+    repo_path = "/Repos/mock-user/mock-repo"
+
+    with patch("requests.get", side_effect=mock_response.json.side_effect):
+        with pytest.raises(requests.exceptions.HTTPError, match="429 Client Error"):
+            check_repo_info(repo_path, dbutils=mock_dbutils)
+
+
 def test_adjust_predictions(spark):
     # Sample data for testing
     data = [(1,), (2,), (3,)]

@@ -29,7 +29,14 @@ def basic_model():
 
     pipeline = Pipeline(
         stages=preprocessing_stages
-        + [GBTRegressor(featuresCol="features", labelCol="label", predictionCol="prediction")]
+        + [
+            GBTRegressor(
+                featuresCol="features",
+                labelCol="label",
+                predictionCol="prediction",
+                maxDepth=config["parameters"]["max_depth"],
+            )
+        ]
     )
 
     with mlflow.start_run(

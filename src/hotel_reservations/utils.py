@@ -30,11 +30,11 @@ def open_config(path: str) -> ProjectConfig:
             config = yaml.safe_load(file)
         logging.info("Configuration file loaded successfully from project_config.yaml")
     except FileNotFoundError as e:
-        msg = f"Configuration file not found. Ensure project_config.yaml exists in the project root: {e}"
+        msg = f"Configuration file not found at '{path}'. Ensure it exists: {e}"
         logging.error(msg)
         raise FileNotFoundError(msg) from e
-    except Exception as e:
-        msg = f"Failed to parse configuration file. Ensure it's valid YAML: {e}"
+    except yaml.YAMLError as e:
+        msg = f"Failed to parse configuration file at '{path}'. Ensure it's valid YAML: {e}"
         logging.error(msg)
         raise ValueError(msg) from e
 
@@ -86,7 +86,10 @@ def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str,
         git_sha (str)
             Current git sha
     """
-    nb_context = json.loads(dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson())  # type: ignore
+    if dbutils is None:
+        raise ValueError("dbutils cannot be None. Please pass the dbutils object when calling check_repo_info.")
+
+    nb_context = json.loads(dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson())
 
     api_url = nb_context["extraContext"]["api_url"]
 
