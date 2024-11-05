@@ -1,3 +1,16 @@
+# Prerequisites:
+#   - uv (Python package manager)
+#   - databricks CLI
+
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help:
+	@echo "Available targets:"
+	@echo "  init                 - Synchronize dependencies using uv"
+	@echo "  build_and_store_whl - Build package and store in DBFS"
+	@echo "  pre_commit_all_files - Run pre-commit checks on all files"
+
 init:
 	uv sync $(if $(extra),--extra=$(extra))
 

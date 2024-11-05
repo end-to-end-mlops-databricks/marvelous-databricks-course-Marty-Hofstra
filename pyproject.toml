@@ -27,7 +27,7 @@ dependencies = [
 dev = ["databricks-connect>=15.4.1, <16",
        "databricks-sdk>=0.32.0, <0.33",
        "ipykernel>=6.29.5, <7",
-       "pip>=24.2",
+       "pip>=24.2, <25",
        "hotel_reservations[test]"]
 
 test = [

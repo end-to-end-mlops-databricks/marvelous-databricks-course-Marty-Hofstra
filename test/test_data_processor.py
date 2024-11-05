@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 from pyspark.testing import assertDataFrameEqual
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
@@ -116,5 +117,8 @@ def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
 
     expected = spark_session.createDataFrame(data_non_missing_target)
 
-    assert processor.df.count() == 2
+    assert processor.df.count() == len(data_non_missing_target), "Should only keep rows with non-null target"
+
     assertDataFrameEqual(processor.df, expected)
+
+    assert processor.df.filter(col("booking_status").isNull()).count() == 0, "Should not have null values in target"

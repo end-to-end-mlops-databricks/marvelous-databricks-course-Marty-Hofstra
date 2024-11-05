@@ -759,7 +759,7 @@ requires-dist = [
     { name = "mlflow", specifier = ">=2.16.0,<3" },
     { name = "numpy", specifier = ">=1.26.4,<2" },
     { name = "pandas", specifier = ">=2.2.2,<3" },
-    { name = "pip", marker = "extra == 'dev'", specifier = ">=24.2" },
+    { name = "pip", marker = "extra == 'dev'", specifier = ">=24.2,<25" },
     { name = "pip", marker = "extra == 'test'", specifier = ">=24.2" },
     { name = "pre-commit", specifier = ">=3.0.0,<4" },
     { name = "pyarrow", specifier = ">=15.0.2,<16" },

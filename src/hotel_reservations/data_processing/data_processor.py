@@ -8,8 +8,6 @@ from pyspark.sql import DataFrame, SparkSession
 class DataProcessor:
     """A class to preprocess the input data
 
-    ...
-
     Attributes
     ----------
     config : ProjectConfigType
