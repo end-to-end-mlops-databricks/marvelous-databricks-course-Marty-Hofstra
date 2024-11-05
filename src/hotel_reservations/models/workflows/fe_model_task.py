@@ -20,7 +20,9 @@ def fe_model():
 
     hotel_reservation_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}")
 
-    write_feature_table(hotel_reservation_data, config["catalog"], config["db_schema"], config["table_name"], spark)
+    write_feature_table(
+        hotel_reservation_data, config["catalog"], config["db_schema"], config["table_name"], "Booking_ID", spark
+    )
 
     fe = feature_engineering.FeatureEngineeringClient()
 

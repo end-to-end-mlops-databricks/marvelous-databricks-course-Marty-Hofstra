@@ -115,13 +115,22 @@ def adjust_predictions(predictions: DataFrame, pred_col_name: str = "prediction"
         scale_factor (float, optional): Factor to scale by. Defaults to 1.3.
 
     Returns:
-        _type_: DataFrame with adjusted predictions
+        DataFrame: DataFrame with adjusted predictions
+
+    Raises:
+            ValueError: If scale_factor is not positive or pred_col_name doesn't exist
     """
+    if scale_factor <= 0:
+        raise ValueError(f"scale_factor must be positive, got {scale_factor}")
+
+    if pred_col_name not in predictions.columns:
+        raise ValueError(f"Prediction column '{pred_col_name}' not found in DataFrame")
+
     return predictions.withColumn(pred_col_name, col(pred_col_name) * lit(scale_factor))
 
 
 def write_feature_table(
-    feature_data: DataFrame, catalog: str, schema: str, use_case_name: str, spark: SparkSession
+    feature_data: DataFrame, catalog: str, schema: str, use_case_name: str, primary_key: str, spark: SparkSession
 ) -> str:
     """Write feature data to the databricks Feature Store. If the table already exists, the data will be upserted. If not, then a table will be created in the Feature Store.
 
@@ -130,11 +139,15 @@ def write_feature_table(
         catalog (str): Catalog in which to write the feature data
         schema (str): Schema/database in which to write the feature data
         use_case_name (str): Name of the use case
+        primary_key (str): Name of the column to use as PK in the Feature table
         spark(SparkSession): The SparkSession used for writing to the FS
 
     Returns:
         str: Message on succesful writing of data to UC
     """
+    if primary_key not in feature_data.columns:
+        raise ValueError(f"Primary key column '{primary_key}' not found in feature_data")
+
     feature_table_name = f"{catalog}.{schema}.{use_case_name}_features"
     fe = FeatureEngineeringClient()
 
@@ -149,7 +162,7 @@ def write_feature_table(
         fe.create_table(
             name=feature_table_name,
             df=feature_data,
-            primary_keys="Booking_ID",
+            primary_keys=primary_key,
             description="Hotel reservation feature data",
         )
         return f"Table {feature_table_name} has been created in the Feature Store successfully."

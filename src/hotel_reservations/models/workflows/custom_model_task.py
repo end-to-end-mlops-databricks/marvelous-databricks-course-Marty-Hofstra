@@ -38,7 +38,7 @@ def custom_model():
 
     example_input = train_data.limit(1)
 
-    example_prediction = wrapped_model.transform(model_input=example_input)["Prediction"].select("prediction")
+    example_prediction = wrapped_model.predict(model_input=example_input)["Prediction"].select("prediction")
 
     mlflow.set_experiment(experiment_name="/Users/martijn.hofstra@eneco.com/hotel_reservations_pyfunc")
 

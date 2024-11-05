@@ -19,14 +19,12 @@ mock_config: dict = {
     "num_features": {
         "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
         "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
-        # Add other numerical features similarly
     },
     "cat_features": {
         "type_of_meal_plan": CatFeature(
             type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
         ),
         "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
-        # Add other categorical features similarly
     },
     "target": "booking_status",
 }
@@ -35,9 +33,27 @@ mock_config: dict = {
 @pytest.fixture
 def mock_dataframe(spark: SparkSession):
     data = [
-        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "purchased": 1},
-        {"age": 30, "income": 60000, "gender": "F", "city": "LA", "purchased": 0},
-        {"age": None, "income": 70000, "gender": "F", "city": None, "purchased": 1},
+        {
+            "no_of_adults": 25,
+            "avg_price_per_room": 50000,
+            "type_of_meal_plan": "Meal Plan 1",
+            "required_car_parking_space": "True",
+            "booking_status": 1,
+        },
+        {
+            "no_of_adults": 30,
+            "avg_price_per_room": 60000,
+            "type_of_meal_plan": "Meal Plan 2",
+            "required_car_parking_space": "False",
+            "booking_status": 0,
+        },
+        {
+            "no_of_adults": None,
+            "avg_price_per_room": 70000,
+            "type_of_meal_plan": "Meal Plan 2",
+            "required_car_parking_space": None,
+            "booking_status": 1,
+        },
     ]
     return spark.createDataFrame(data)
 
@@ -100,12 +116,36 @@ def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_datafram
 @patch.object(DataProcessor, "read_UC_spark")
 def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
     data_missing_target = [
-        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "booking_status": None},
-        {"age": 30, "income": 60000, "gender": "F", "city": "LA", "booking_status": None},
+        {
+            "no_of_adults": 25,
+            "avg_price_per_room": 50000,
+            "type_of_meal_plan": "Meal Plan 1",
+            "required_car_parking_space": "True",
+            "booking_status": None,
+        },
+        {
+            "no_of_adults": 30,
+            "avg_price_per_room": 60000,
+            "type_of_meal_plan": "Meal Plan 2",
+            "required_car_parking_space": "False",
+            "booking_status": None,
+        },
     ]
     data_non_missing_target = [
-        {"age": None, "income": 70000, "gender": "F", "city": None, "booking_status": 1},
-        {"age": 25, "income": 50000, "gender": "M", "city": "NY", "booking_status": 2},
+        {
+            "no_of_adults": None,
+            "avg_price_per_room": 50000,
+            "type_of_meal_plan": "Meal Plan 1",
+            "required_car_parking_space": "True",
+            "booking_status": 1,
+        },
+        {
+            "no_of_adults": 30,
+            "avg_price_per_room": 60000,
+            "type_of_meal_plan": "Meal Plan 2",
+            "required_car_parking_space": "False",
+            "booking_status": 0,
+        },
     ]
 
     mock_data = data_missing_target + data_non_missing_target

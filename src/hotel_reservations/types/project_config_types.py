@@ -27,9 +27,9 @@ class Parameters(BaseModel):
     - `max_depth`: Maximum tree depth (e.g., 6).
     """
 
-    learning_rate: float = Field(..., gt=0)  # Use Field to set constraints
-    n_estimators: int = Field(..., gt=0)  # Use Field to set constraints
-    max_depth: int = Field(..., gt=0)  # Use Field to set constraints
+    learning_rate: float = Field(..., gt=0, le=1)  # Use Field to set constraints
+    n_estimators: int = Field(..., gt=0, le=10000)  # Use Field to set constraints
+    max_depth: int = Field(..., gt=0, le=32)  # Use Field to set constraints
 
 
 class ProjectConfig(BaseModel):

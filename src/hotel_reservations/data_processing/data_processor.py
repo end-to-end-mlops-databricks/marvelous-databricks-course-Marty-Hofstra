@@ -10,7 +10,7 @@ class DataProcessor:
 
     Attributes
     ----------
-    config : ProjectConfigType
+    config : dict
         Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
 
     Methods
@@ -74,6 +74,9 @@ class DataProcessor:
         # Extracting input column names from the config
         num_feature_cols = list(self.config["num_features"].keys())
         cat_feature_cols = list(self.config["cat_features"].keys())
+
+        if not num_feature_cols and not cat_feature_cols:
+            raise ValueError("No feature columns specified in config")
 
         target_indexer: StringIndexer = StringIndexer(inputCol=target, outputCol="label")
 
