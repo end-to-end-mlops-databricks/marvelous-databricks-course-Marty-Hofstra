@@ -1,10 +1,10 @@
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.utils import open_config
 
 
-def preprocessing() -> list | DataFrame | DataFrame:
+def preprocessing() -> list:
     spark = SparkSession.builder.getOrCreate()
 
     config = open_config("../../../../project_config.yaml").dict()
@@ -15,8 +15,15 @@ def preprocessing() -> list | DataFrame | DataFrame:
 
     train, test = data_preprocessor.split_data()
 
-    return preprocessing_stages, train, test
+    train.write.format("delta").mode("overwrite").saveAsTable(
+        f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data"
+    )
+    test.write.format("delta").mode("overwrite").saveAsTable(
+        f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_test_data"
+    )
+
+    return preprocessing_stages
 
 
 if __name__ == "__main__":
-    preprocessing_stages, train, test = preprocessing()
+    preprocessing_stages = preprocessing()

@@ -12,7 +12,7 @@ spark = spark_session
 
 mock_config: dict = {
     "catalog": "my_catalog",
-    "schema": "my_schema",
+    "db_schema": "my_schema",
     "table_name": "hotel_reservations",
     "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
     "num_features": {
@@ -49,7 +49,7 @@ def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSes
     processor = DataProcessor(mock_config, spark)
 
     mock_read_UC_spark.assert_called_once_with(
-        mock_config["catalog"], mock_config["schema"], mock_config["table_name"], spark
+        mock_config["catalog"], mock_config["db_schema"], mock_config["table_name"], spark
     )
 
     assert processor.df == mock_dataframe

@@ -2,12 +2,15 @@ import mlflow
 from mlflow.models import infer_signature
 from pyspark.ml import Pipeline
 from pyspark.ml.regression import GBTRegressor
+from pyspark.sql import SparkSession
 
 from hotel_reservations.data_processing.workflows.data_processing_task import preprocessing
 from hotel_reservations.utils import check_repo_info, get_error_metrics, open_config
 
 
 def basic_model():
+    spark = SparkSession.builder.getOrCreate()
+
     config = open_config("../../../../project_config.yaml").dict()
 
     mlflow.set_tracking_uri("databricks")
@@ -15,7 +18,9 @@ def basic_model():
 
     mlflow.set_experiment(experiment_name="/Users/martijn.hofstra@eneco.com/hotel_reservations")
 
-    preprocessing_stages, train, test = preprocessing()
+    preprocessing_stages = preprocessing()
+    train_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data")
+    test_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_test_data")
 
     git_branch, git_sha = check_repo_info(
         "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra",
@@ -32,9 +37,9 @@ def basic_model():
     ) as run:
         run_id = run.info.run_id
 
-        model = pipeline.fit(train)
+        model = pipeline.fit(train_data)
 
-        predictions = model.transform(test)
+        predictions = model.transform(test_data)
 
         error_metrics = get_error_metrics(predictions)
 
@@ -46,7 +51,7 @@ def basic_model():
         mlflow.log_metric("mse", error_metrics["mse"])
         mlflow.log_metric("mae", error_metrics["mae"])
         mlflow.log_metric("r2_score", error_metrics["r2"])
-        signature = infer_signature(model_input=train, model_output=predictions.select("prediction"))
+        signature = infer_signature(model_input=train_data, model_output=predictions.select("prediction"))
 
         mlflow.spark.log_model(spark_model=model, artifact_path="gbt-pipeline-model", signature=signature)
 

@@ -7,7 +7,12 @@ import requests
 import yaml
 
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
-from hotel_reservations.utils import adjust_predictions, check_repo_info, get_error_metrics, open_config
+from hotel_reservations.utils import (
+    adjust_predictions,
+    check_repo_info,
+    get_error_metrics,
+    open_config,
+)
 from test.utils import spark_session
 
 mock_config: dict = {
