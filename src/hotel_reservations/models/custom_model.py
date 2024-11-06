@@ -8,6 +8,10 @@ class HotelReservationsModelWrapper(mlflow.pyfunc.PythonModel):
     def __init__(self, model):
         self.model = model
 
+    def load_context(self, context):
+        """Load model from MLflow context."""
+        self.model = mlflow.pyfunc.spark_udf(context.artifacts["model_path"])
+
     def predict(self, context, model_input: DataFrame):
         if isinstance(model_input, DataFrame):
             columns = list(model_input.columns)
