@@ -21,7 +21,7 @@ def custom_model():
     train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
 
     git_branch, git_sha = check_repo_info(
-        f"/Workspace/{config.user_dir_path}{config.git_repo}",
+        f"/Workspace/{config.user_dir_path}/{config.git_repo}",
         dbutils,  # type: ignore # noqa: F821
     )
 
