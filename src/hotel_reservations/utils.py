@@ -7,7 +7,6 @@ import yaml
 from databricks.feature_engineering import FeatureEngineeringClient
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, lit
 
 from hotel_reservations.types.project_config_types import ProjectConfig
 
@@ -104,31 +103,6 @@ def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str,
     db_repo_head_commit = db_repo_data["repos"][0]["head_commit_id"]
 
     return db_repo_branch, db_repo_head_commit
-
-
-def adjust_predictions(
-    predictions: DataFrame, pred_col_name: str = "prediction", scale_factor: float = 1.3
-) -> DataFrame:
-    """Adjusts the predictions by a scale factor
-
-    Args:
-        predictions (DataFrame): PySpark DataFrame containing the prediction
-        pred_col_name (str, optional): name of the column containing the predictions. Defaults to "prediction".
-        scale_factor (float, optional): Factor to scale by. Defaults to 1.3.
-
-    Returns:
-        DataFrame: DataFrame with adjusted predictions
-
-    Raises:
-            ValueError: If scale_factor is not positive or pred_col_name doesn't exist
-    """
-    if scale_factor <= 0:
-        raise ValueError(f"scale_factor must be positive, got {scale_factor}")
-
-    if pred_col_name not in predictions.columns:
-        raise ValueError(f"Prediction column '{pred_col_name}' not found in DataFrame")
-
-    return predictions.withColumn(pred_col_name, col(pred_col_name) * lit(scale_factor))
 
 
 def write_feature_table(

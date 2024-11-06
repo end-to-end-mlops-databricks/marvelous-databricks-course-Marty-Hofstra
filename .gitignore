@@ -105,3 +105,6 @@ dmypy.json
 
 # mlruns
 mlruns/
+
+# spark warehouse
+spark-warehouse/
