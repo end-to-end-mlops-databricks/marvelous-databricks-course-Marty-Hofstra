@@ -32,13 +32,11 @@ def custom_model():
 
     loaded_model = mlflow.pyfunc.spark_udf(spark, f"runs:/{run_id_basic_model}/gbt-pipeline-model")
 
-    wrapped_model = HotelReservationsModelWrapper()
-
-    wrapped_model.model = loaded_model
+    wrapped_model = HotelReservationsModelWrapper(loaded_model)
 
     example_input = train_data.limit(1)
 
-    example_prediction = wrapped_model.predict(model_input=example_input)["Prediction"].select("prediction")
+    example_prediction = wrapped_model.predict(context=None, model_input=example_input).select("prediction")
 
     mlflow.set_experiment(experiment_name=f"/{config.user_dir_path}/{config.use_case_name}_pyfunc")
 
@@ -54,15 +52,14 @@ def custom_model():
         conda_env = _mlflow_conda_env(  # type: ignore # noqa: F841
             additional_conda_deps=None,
             additional_pip_deps=[
-                f"{config.volume_whl_path}/housing_price-0.0.2-py3-none-any.whl",
+                f"{config.volume_whl_path}/hotel_reservations-0.0.2-py3-none-any.whl",
             ],
             additional_conda_channels=None,
         )
         mlflow.pyfunc.log_model(
             python_model=wrapped_model,
             artifact_path="pyfunc-hotel-reservations-model",
-            artifacts={"model_path": wrapped_model.model.metadata.artifact_path},
-            code_paths=[f"{config.volume_whl_path}/packages/housing_price-0.0.2-py3-none-any.whl"],
+            code_paths=[f"{config.volume_whl_path}/hotel_reservations-0.0.2-py3-none-any.whl"],
             signature=signature,
         )
 

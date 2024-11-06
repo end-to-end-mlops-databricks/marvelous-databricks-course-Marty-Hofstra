@@ -31,21 +31,20 @@ def fe_model():
     train_data = (
         spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
         .drop("avg_price_per_room")
-        .withColumn("no_of_week_nights", col("no_of_week_nights").cast("int"))
-        .withColumn("no_of_weekend_nights", col("no_of_weekend_nights").cast("int"))
+        .withColumn("arrival_year", col("arrival_year").cast("int"))
     )
 
     test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 
-    function_name = f"{config.catalog}.{config.db_schema}.calculate_no_of_nights"
+    function_name = f"{config.catalog}.{config.db_schema}.calculate_years_since_booking"
 
     spark.sql(f"""
-    CREATE OR REPLACE FUNCTION {function_name}(no_of_week_nights INT, no_of_weekend_nights INT)
+    CREATE OR REPLACE FUNCTION {function_name}(arrival_year INT)
     RETURNS INT
     LANGUAGE PYTHON AS
     $$
-    # Calculate the total number of nights
-    return no_of_week_nights + no_of_weekend_nights
+    from datetime import datetime
+    return datetime.now().year - arrival_year
     $$
     """)
 
@@ -60,11 +59,8 @@ def fe_model():
             ),
             FeatureFunction(
                 udf_name=function_name,
-                output_name="no_of_nights",
-                input_bindings={
-                    "no_of_weekend_nights": "no_of_weekend_nights",
-                    "no_of_week_nights": "no_of_week_nights",
-                },
+                output_name="years_since_booking",
+                input_bindings={"arrival_year": "arrival_year"},
             ),
         ],
     )
