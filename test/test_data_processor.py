@@ -6,28 +6,31 @@ from pyspark.sql.functions import col
 from pyspark.testing import assertDataFrameEqual
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
-from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
+from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
 from test.utils import spark_session
 
 spark = spark_session
 
-mock_config: dict = {
-    "catalog": "my_catalog",
-    "db_schema": "my_schema",
-    "table_name": "hotel_reservations",
-    "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
-    "num_features": {
+mock_config = ProjectConfig(
+    catalog="my_catalog",
+    schema="my_schema",
+    use_case_name="hotel_reservations",
+    user_dir_path="/Users/user/",
+    git_repo="git_repo",
+    volume_whl_path="Volumes/users/user/packages/",
+    parameters={"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
+    num_features={
         "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
         "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
     },
-    "cat_features": {
+    cat_features={
         "type_of_meal_plan": CatFeature(
             type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
         ),
         "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
     },
-    "target": "booking_status",
-}
+    target="booking_status",
+)
 
 
 @pytest.fixture
@@ -66,7 +69,7 @@ def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSes
     processor = DataProcessor(mock_config, spark)
 
     mock_read_UC_spark.assert_called_once_with(
-        mock_config["catalog"], mock_config["db_schema"], mock_config["table_name"], spark
+        mock_config.catalog, mock_config.db_schema, mock_config.use_case_name, spark
     )
 
     assert processor.df == mock_dataframe

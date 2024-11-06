@@ -7,7 +7,7 @@ from hotel_reservations.utils import open_config
 def preprocessing() -> list:
     spark = SparkSession.builder.getOrCreate()
 
-    config = open_config("../../../../project_config.yaml").dict()
+    config = open_config("../../../../project_config.yaml")
 
     data_preprocessor = DataProcessor(config, spark)
 
@@ -16,10 +16,10 @@ def preprocessing() -> list:
     train, test = data_preprocessor.split_data()
 
     train.write.format("delta").mode("overwrite").saveAsTable(
-        f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data"
+        f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
     )
     test.write.format("delta").mode("overwrite").saveAsTable(
-        f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_test_data"
+        f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data"
     )
 
     return preprocessing_stages

@@ -12,21 +12,21 @@ from hotel_reservations.utils import check_repo_info, open_config
 
 def custom_model():
     spark = SparkSession.builder.getOrCreate()
-    config = open_config("../../../../project_config.yaml").dict()
+    config = open_config("../../../../project_config.yaml")
 
     mlflow.set_registry_uri("databricks-uc")
     mlflow.set_tracking_uri("databricks")
     client = MlflowClient()
 
-    train_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data")
+    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
 
     git_branch, git_sha = check_repo_info(
-        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra",
+        f"/Workspace/{config.user_dir_path}{config.git_repo}",
         dbutils,  # type: ignore # noqa: F821
     )
 
     run_id_basic_model = mlflow.search_runs(
-        experiment_names=["/Users/martijn.hofstra@eneco.com/hotel_reservations"],
+        experiment_names=[f"/{config.user_dir_path}/{config.use_case_name}"],
         filter_string=f"tags.branch='{git_branch}'",
     )["run_id"].iloc[0]
 
@@ -40,21 +40,21 @@ def custom_model():
 
     example_prediction = wrapped_model.predict(model_input=example_input)["Prediction"].select("prediction")
 
-    mlflow.set_experiment(experiment_name="/Users/martijn.hofstra@eneco.com/hotel_reservations_pyfunc")
+    mlflow.set_experiment(experiment_name=f"/{config.user_dir_path}/{config.use_case_name}_pyfunc")
 
     with mlflow.start_run(tags={"branch": git_branch, "git_sha": git_sha}) as run:
         run_id = run.info.run_id
         signature = infer_signature(model_input=train_data, model_output=example_prediction)
         dataset = mlflow.data.from_spark(
             train_data,
-            table_name=f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data",
+            table_name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data",
             version="0",
         )
         mlflow.log_input(dataset, context="training")
         conda_env = _mlflow_conda_env(  # type: ignore # noqa: F841
             additional_conda_deps=None,
             additional_pip_deps=[
-                "Volumes/users/martijn_hofstra/packages/housing_price-0.0.2-py3-none-any.whl",
+                f"{config.volume_whl_path}/housing_price-0.0.2-py3-none-any.whl",
             ],
             additional_conda_channels=None,
         )
@@ -62,14 +62,14 @@ def custom_model():
             python_model=wrapped_model,
             artifact_path="pyfunc-hotel-reservations-model",
             artifacts={"model_path": wrapped_model.model.metadata.artifact_path},
-            code_paths=["Volumes/users/martijn_hofstra/packages/housing_price-0.0.2-py3-none-any.whl"],
+            code_paths=[f"{config.volume_whl_path}/packages/housing_price-0.0.2-py3-none-any.whl"],
             signature=signature,
         )
 
     loaded_model = mlflow.pyfunc.load_model(f"runs:/{run_id}/pyfunc-hotel-reservations-model")
     loaded_model.unwrap_python_model()
 
-    model_name = f"{config['catalog']}.{config['db_schema']}.hotel_reservations_model_pyfunc"
+    model_name = f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_pyfunc"
 
     model_version = mlflow.register_model(
         model_uri=f"runs:/{run_id}/pyfunc-hotel-reservations-model", name=model_name, tags={"git_sha": f"{git_sha}"}

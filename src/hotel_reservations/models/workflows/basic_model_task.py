@@ -11,19 +11,19 @@ from hotel_reservations.utils import check_repo_info, get_error_metrics, open_co
 def basic_model():
     spark = SparkSession.builder.getOrCreate()
 
-    config = open_config("../../../../project_config.yaml").dict()
+    config = open_config("../../../../project_config.yaml")
 
     mlflow.set_tracking_uri("databricks")
     mlflow.set_registry_uri("databricks-uc")
 
-    mlflow.set_experiment(experiment_name="/Users/martijn.hofstra@eneco.com/hotel_reservations")
+    mlflow.set_experiment(experiment_name=f"/{config.user_dir_path}/{config.use_case_name}")
 
     preprocessing_stages = preprocessing()
-    train_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data")
-    test_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_test_data")
+    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.table_name}_train_data")
+    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.table_name}_test_data")
 
     git_branch, git_sha = check_repo_info(
-        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra",
+        f"/Workspace/{config.user_dir_path}/{config.git_repo}",
         dbutils,  # type: ignore # noqa: F821
     )
 
@@ -64,7 +64,7 @@ def basic_model():
 
     model_version = mlflow.register_model(
         model_uri=f"runs:/{run_id}/gbt-pipeline-model",
-        name=f"{config['catalog']}.{config['db_schema']}.hotel_reservations_model_basic",
+        name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic",
         tags={"git_sha": git_sha},
     )
 

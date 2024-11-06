@@ -37,7 +37,10 @@ class ProjectConfig(BaseModel):
     Defines the configuration for the project.
     - `catalog`: The data catalog name.
     - `db_schema`: The schema where the dataset resides. Alias to `schema`
-    - `table_name`: The table name of the dataset.
+    - `use_case_name`: The name of the use case.
+    - `user_dir_path`: Path of the user folder in Databricks, this is used for the experiment, volume and git repo location
+    - `git_repo`: Name of the Git repo
+    - `volume_whl_path`: Volume path where the whl is stored
     - `parameters`: Model parameters such as learning rate and estimators.
     - `num_features`: Numerical features with details on type and constraints.
     - `cat_features`: Categorical features with details on type, allowed values, and constraints.
@@ -46,7 +49,10 @@ class ProjectConfig(BaseModel):
 
     catalog: str
     db_schema: str = Field(..., alias="schema")
-    table_name: str
+    use_case_name: str
+    user_dir_path: str
+    git_repo: str
+    volume_whl_path: str
     parameters: Parameters
     num_features: Dict[str, NumFeature]
     cat_features: Dict[str, CatFeature]

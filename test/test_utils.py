@@ -18,7 +18,10 @@ from test.utils import spark_session
 mock_config: dict = {
     "catalog": "my_catalog",
     "schema": "my_schema",
-    "table_name": "hotel_reservations",
+    "use_case_name": "hotel_reservations",
+    "user_dir_path": "/Users/user/",
+    "git_repo": "git_repo",
+    "volume_whl_path": "Volumes/users/user/packages/",
     "parameters": {"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
     "num_features": {
         "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
@@ -48,7 +51,9 @@ def test_open_config_success():
             # Perform assertions to ensure the values match
             assert config.catalog == mock_config["catalog"]
             assert config.db_schema == mock_config["schema"]
-            assert config.table_name == mock_config["table_name"]
+            assert config.use_case_name == mock_config["use_case_name"]
+            assert config.user_dir_path == mock_config["user_dir_path"]
+            assert config.git_repo == mock_config["git_repo"]
             assert config.parameters == mock_config["parameters"]
             assert config.num_features == mock_config["num_features"]
             assert config.cat_features == mock_config["cat_features"]
@@ -261,3 +266,19 @@ def test_adjust_predictions_custom_column(spark):
     # Assert the adjusted predictions are as expected
     for result, expected in zip(adjusted_results, expected_results, strict=False):
         assert result["predicted_value"] == expected[0]
+
+
+def test_adjust_predictions_invalid_scale_factor(spark):
+    """Test handling of invalid scale factors."""
+    data = [(1,), (2,), (3,)]
+    df = spark.createDataFrame(data, ["prediction"])
+
+    negative_scale_factor = -1.0
+    zero_scale_factor = 0.0
+
+    with pytest.raises(ValueError, match=f"scale_factor must be positive, got {negative_scale_factor}"):
+        adjust_predictions(df, scale_factor=negative_scale_factor)
+
+    # Test zero scale factor
+    with pytest.raises(ValueError, match=f"scale_factor must be positive, got {zero_scale_factor}"):
+        adjust_predictions(df, scale_factor=zero_scale_factor)

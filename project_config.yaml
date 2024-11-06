@@ -1,6 +1,9 @@
 catalog: users # Change this to the catalog you're using
 schema: martijn_hofstra # Change this to the schema where the hotel reservations dataset resides
-table_name: hotel_reservations
+use_case_name: hotel_reservations
+user_dir_path: Users/martijn.hofstra@eneco.com
+git_repo: marvelous-databricks-course-Marty-Hofstra
+volume_whl_path: Volumes/users/martijn_hofstra/packages
 
 parameters:
   learning_rate: 0.01

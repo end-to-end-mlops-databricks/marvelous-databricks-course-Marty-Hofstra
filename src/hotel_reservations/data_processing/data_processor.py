@@ -4,13 +4,15 @@ from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
 from pyspark.sql import DataFrame, SparkSession
 
+from hotel_reservations.types.project_config_types import ProjectConfig
+
 
 class DataProcessor:
     """A class to preprocess the input data
 
     Attributes
     ----------
-    config : dict
+    config : ProjectConfig
         Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
 
     Methods
@@ -23,15 +25,15 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: dict, spark: SparkSession) -> None:
+    def __init__(self, config: ProjectConfig, spark: SparkSession) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
-            config (dict): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+            config (ProjectConfig): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
-        self.config: dict = config
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["db_schema"], config["table_name"], spark)
+        self.config: ProjectConfig = config
+        self.df: DataFrame = self.read_UC_spark(config.catalog, config.db_schema, config.use_case_name, spark)
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
         self.preprocessor: Optional[Pipeline] = None
@@ -68,12 +70,12 @@ class DataProcessor:
         Returns:
             List: Preprocessing stages required for the PySpark ML pipeline
         """
-        target: str = self.config["target"]
+        target: str = self.config.target
         self.df = self.df.dropna(subset=[target])
 
         # Extracting input column names from the config
-        num_feature_cols = list(self.config["num_features"].keys())
-        cat_feature_cols = list(self.config["cat_features"].keys())
+        num_feature_cols = list(self.config.num_features.keys())
+        cat_feature_cols = list(self.config.cat_features.keys())
 
         if not num_feature_cols and not cat_feature_cols:
             raise ValueError("No feature columns specified in config")

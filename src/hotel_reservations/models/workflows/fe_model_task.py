@@ -16,12 +16,12 @@ def fe_model():
     mlflow.set_registry_uri("databricks-uc")
     mlflow.set_tracking_uri("databricks")
 
-    config = open_config("../../../../project_config.yaml").dict()
+    config = open_config("../../../../project_config.yaml")
 
-    hotel_reservation_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}")
+    hotel_reservation_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
 
     write_feature_table(
-        hotel_reservation_data, config["catalog"], config["db_schema"], config["table_name"], "Booking_ID", spark
+        hotel_reservation_data, config.catalog, config.db_schema, config.use_case_name, "Booking_ID", spark
     )
 
     fe = feature_engineering.FeatureEngineeringClient()
@@ -29,15 +29,15 @@ def fe_model():
     preprocessing_stages = preprocessing()
 
     train_data = (
-        spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_train_data")
+        spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
         .drop("avg_price_per_room")
         .withColumn("no_of_week_nights", col("no_of_week_nights").cast("int"))
         .withColumn("no_of_weekend_nights", col("no_of_weekend_nights").cast("int"))
     )
 
-    test_data = spark.read.table(f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_test_data")
+    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 
-    function_name = f"{config['catalog']}.{config['db_schema']}.calculate_no_of_nights"
+    function_name = f"{config.catalog}.{config.db_schema}.calculate_no_of_nights"
 
     spark.sql(f"""
     CREATE OR REPLACE FUNCTION {function_name}(no_of_week_nights INT, no_of_weekend_nights INT)
@@ -54,7 +54,7 @@ def fe_model():
         label=config["target"],
         feature_lookups=[
             FeatureLookup(
-                table_name=f"{config['catalog']}.{config['db_schema']}.{config['table_name']}_features",
+                table_name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_features",
                 feature_names=["avg_price_per_room"],
                 lookup_key="Booking_ID",
             ),
@@ -75,11 +75,11 @@ def fe_model():
     )
 
     git_branch, git_sha = check_repo_info(
-        "/Workspace/Users/martijn.hofstra@eneco.com/marvelous-databricks-course-Marty-Hofstra",
+        f"/Workspace/{config.user_dir_path}/{config.git_repo}",
         dbutils,  # type: ignore # noqa: F821
     )
 
-    mlflow.set_experiment(experiment_name="/Users/martijn.hofstra@eneco.com/hotel_reservations_fe")
+    mlflow.set_experiment(experiment_name=f"/{config.user_dir_path}/{config.use_case_name}_fe")
 
     with mlflow.start_run(
         tags={"git_sha": git_sha, "branch": git_branch},
@@ -112,5 +112,5 @@ def fe_model():
 
     mlflow.register_model(
         model_uri=f"runs:/{run_id}/gbt-pipeline-model-fe",
-        name=f"{config['catalog']}.{config['db_schema']}.house_prices_model_fe",
+        name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_fe",
     )

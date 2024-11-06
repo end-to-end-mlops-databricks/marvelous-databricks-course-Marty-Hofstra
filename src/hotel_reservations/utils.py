@@ -106,7 +106,9 @@ def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str,
     return db_repo_branch, db_repo_head_commit
 
 
-def adjust_predictions(predictions: DataFrame, pred_col_name: str = "prediction", scale_factor: float = 1.3):
+def adjust_predictions(
+    predictions: DataFrame, pred_col_name: str = "prediction", scale_factor: float = 1.3
+) -> DataFrame:
     """Adjusts the predictions by a scale factor
 
     Args:
