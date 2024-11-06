@@ -34,7 +34,7 @@ def basic_model():
                 featuresCol="features",
                 labelCol="label",
                 predictionCol="prediction",
-                maxDepth=config["parameters"]["max_depth"],
+                maxDepth=config.parameters.max_depth,
             )
         ]
     )

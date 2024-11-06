@@ -35,12 +35,12 @@ data_preprocessor.preprocess_data()
 
 train, test = data_preprocessor.split_data()
 
-X_features = list(set(config["cat_features"]) | set(config["num_features"]))
+X_features = list(set(config.cat_features) | set(config.num_features))
 
 X_train = train.select(X_features)
 X_test = test.select(X_features)
-Y_train = train.select(config["target"])
-Y_test = test.select(config["target"])
+Y_train = train.select(config.target)
+Y_test = test.select(config.target)
 
 display(X_train)
 ```
