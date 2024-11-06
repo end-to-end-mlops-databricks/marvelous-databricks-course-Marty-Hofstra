@@ -19,8 +19,8 @@ def basic_model():
     mlflow.set_experiment(experiment_name=f"/{config.user_dir_path}/{config.use_case_name}")
 
     preprocessing_stages = preprocessing()
-    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.table_name}_train_data")
-    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.table_name}_test_data")
+    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
+    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 
     git_branch, git_sha = check_repo_info(
         f"/Workspace/{config.user_dir_path}/{config.git_repo}",
