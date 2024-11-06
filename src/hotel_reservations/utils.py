@@ -93,12 +93,24 @@ def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str,
 
     api_token = nb_context["extraContext"]["api_token"]
 
-    db_repo_data = requests.get(
-        f"{api_url}/api/2.0/repos", headers={"Authorization": f"Bearer {api_token}"}, params={"path_prefix": repo_path}
-    ).json()
+    try:
+        db_repo_data = requests.get(
+            f"{api_url}/api/2.0/repos",
+            headers={"Authorization": f"Bearer {api_token}"},
+            params={"path_prefix": repo_path},
+        ).json()
+    except requests.exceptions.RequestException as e:
+        msg = f"Failed to fetch repository data: {e}"
+        logging.error(msg)
+        raise ConnectionError(msg) from e
 
-    db_repo_branch = db_repo_data["repos"][0]["branch"]
+    if not db_repo_data.get("repos"):
+        msg = f"No repository found at path: {repo_path}"
+        logging.error(msg)
+        raise ValueError(msg)
 
-    db_repo_head_commit = db_repo_data["repos"][0]["head_commit_id"]
+    repo_info = db_repo_data["repos"][0]
+    db_repo_branch = repo_info.get("branch", "N/A")
+    db_repo_head_commit = repo_info.get("head_commit_id", "N/A")
 
     return db_repo_branch, db_repo_head_commit
