@@ -4,7 +4,8 @@ from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
-from hotel_reservations.utils import open_config, write_feature_table
+from hotel_reservations.featurisation.featurisation import write_feature_table
+from hotel_reservations.utils import open_config
 
 
 def featurisation():

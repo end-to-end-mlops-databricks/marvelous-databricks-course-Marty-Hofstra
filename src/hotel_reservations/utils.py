@@ -4,9 +4,8 @@ from typing import Any, Optional
 
 import requests
 import yaml
-from databricks.feature_engineering import FeatureEngineeringClient
 from pyspark.ml.evaluation import RegressionEvaluator
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 
 from hotel_reservations.types.project_config_types import ProjectConfig
 
@@ -103,42 +102,3 @@ def check_repo_info(repo_path: str, dbutils: Optional[Any] = None) -> tuple[str,
     db_repo_head_commit = db_repo_data["repos"][0]["head_commit_id"]
 
     return db_repo_branch, db_repo_head_commit
-
-
-def write_feature_table(
-    feature_data: DataFrame, catalog: str, schema: str, use_case_name: str, primary_key: str, spark: SparkSession
-) -> str:
-    """Write feature data to the databricks Feature Store. If the table already exists, the data will be upserted. If not, then a table will be created in the Feature Store.
-
-    Args:
-        feature_data (DataFrame): Dataframe containing feature data to write to the Feature Store
-        catalog (str): Catalog in which to write the feature data
-        schema (str): Schema/database in which to write the feature data
-        use_case_name (str): Name of the use case
-        primary_key (str): Name of the column to use as PK in the Feature table
-        spark(SparkSession): The SparkSession used for writing to the FS
-
-    Returns:
-        str: Message on succesful writing of data to UC
-    """
-    if primary_key not in feature_data.columns:
-        raise ValueError(f"Primary key column '{primary_key}' not found in feature_data")
-
-    feature_table_name = f"{catalog}.{schema}.{use_case_name}_features"
-    fe = FeatureEngineeringClient()
-
-    if spark.catalog.tableExists(feature_table_name):
-        fe.write_table(
-            name=feature_table_name,
-            df=feature_data,
-            mode="merge",
-        )
-        return f"The feature data has been succesfully upserted into {feature_table_name}"
-    else:
-        fe.create_table(
-            name=feature_table_name,
-            df=feature_data,
-            primary_keys=primary_key,
-            description="Hotel reservation feature data",
-        )
-        return f"Table {feature_table_name} has been created in the Feature Store successfully."

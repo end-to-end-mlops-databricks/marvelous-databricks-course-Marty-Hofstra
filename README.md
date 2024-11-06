@@ -6,7 +6,9 @@ This repo contains functionality for modelling the hotel reservations dataset, t
 
 ## Setup
 ### Virtual environment
-In order to set your venv, run `make init` in the terminal. UV is used as Python package installer and resolver, it can be installed by running `brew install uv`.
+In order to set your venv, run `make init` in the terminal. UV is used as Python package installer and resolver, it can be installed by running `brew install uv`. For local testing, the optional test dependencies have to be installed by running `make init extra=test`, this is required for running PySpark locally. In order to use DBConnect, the optional dev dependencies have to be installed by running `make init extra=dev`
+
+Note: It might occur that after `make init extra=test`, the PySpark version patched from DBconnect is still used, this makes the unit tests fail because it requires a remote Spark session. If this happens, run `pip uninstall pyspark` and `pip uninstall pyspark==3.5.0`.
 
 ### Databricks
 Install the Databricks extension in Visual Studio Code and follow the steps visible in the extension. Run `databricks auth login - configure-cluster - host <workspace-url>` in the terminal, this should create a `databrickscfg` file that looks as follows:
