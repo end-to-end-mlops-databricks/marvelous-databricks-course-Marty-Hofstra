@@ -5,6 +5,9 @@ Hotel reservations package by Marty-Hofstra
 This repo contains functionality for modelling the hotel reservations dataset, this can be [found here](https://www.kaggle.com/datasets/ahsan81/hotel-reservations-classification-dataset)
 
 ## Setup
+### Secrets
+The Databricks user directory and volume path where the .whl is stored are not assigned in the config yaml in order to prevent them from being exposed. by following the steps in the `create_databricks_secrets.py` you can add these to the Databricks secrets. This has to be done before you can open the config.
+
 ### Virtual environment
 In order to set your venv, run `make init` in the terminal. UV is used as Python package installer and resolver, it can be installed by running `brew install uv`. For local testing, the optional test dependencies have to be installed by running `make init extra=test`, this is required for running PySpark locally. In order to use DBConnect, the optional dev dependencies have to be installed by running `make init extra=dev`
 

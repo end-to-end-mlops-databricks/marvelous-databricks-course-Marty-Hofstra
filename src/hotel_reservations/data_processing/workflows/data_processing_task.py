@@ -7,7 +7,7 @@ from hotel_reservations.utils import open_config
 def preprocessing() -> list:
     spark = SparkSession.builder.getOrCreate()
 
-    config = open_config("../../../../project_config.yaml")
+    config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
     data_preprocessor = DataProcessor(config, spark)
 

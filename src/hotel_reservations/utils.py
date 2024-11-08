@@ -1,20 +1,38 @@
 import json
 import logging
+import os
 from typing import Any, Optional
 
 import requests
 import yaml
+from databricks.sdk import WorkspaceClient
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame
 
 from hotel_reservations.types.project_config_types import ProjectConfig
 
 
-def open_config(path: str) -> ProjectConfig:
-    """Opens the project config file based on the path given
+def get_api_token_from_secrets(scope: str, key: str) -> str:
+    """Retrieves Databricks secrets with dbutils, this is used to retrieve the Databricks volume path and the Databricks user directory path. When no profile is assigned to the WorkspaceClient, the DEFAULT profile is used.
+
+    Args:
+        scope (str): Name of the Databricks secret scope
+        key (str): Name of the secret
+
+    Returns:
+        str: The value of the secret
+    """
+    w = WorkspaceClient(profile=os.environ.get("DATABRICKS_PROFILE", None))
+    secret = w.dbutils.secrets.get(scope=scope, key=key)
+    return secret
+
+
+def open_config(path: str, scope: str) -> ProjectConfig:
+    """Opens the project config file based on the path given, the user_dir_path and volume_whl_path are retrieved from Databricks dbutils secrets. Make sure you've read the documentation and followed the steps in the create_databricks_secrets notebook before calling this function.
 
     Args:
         path (str): Path to the project config yaml file
+        scope (str): Name of the Databricks secret scope
 
     Raises:
         FileNotFoundError: When the given path is not found
@@ -36,6 +54,8 @@ def open_config(path: str) -> ProjectConfig:
         logging.error(msg)
         raise ValueError(msg) from e
 
+    config["user_dir_path"] = get_api_token_from_secrets(scope, "user_dir_path")
+    config["volume_whl_path"] = get_api_token_from_secrets(scope, "volume_whl_path")
     return ProjectConfig(**config)
 
 

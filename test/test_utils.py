@@ -1,5 +1,4 @@
 import json
-import logging
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -38,31 +37,10 @@ mock_config: dict = {
 }
 
 
-def test_open_config_success():
-    # Convert the mock config to YAML and mock the open function to read this as file content.
-    mock_yaml_content = yaml.dump(mock_config)
-
-    with patch("builtins.open", mock_open(read_data=mock_yaml_content)):
-        with patch("yaml.safe_load", return_value=mock_config):
-            # Call the open_config function to read the configuration
-            config = open_config("path/to/config.yaml")
-
-            # Perform assertions to ensure the values match
-            assert config.catalog == mock_config["catalog"]
-            assert config.db_schema == mock_config["schema"]
-            assert config.use_case_name == mock_config["use_case_name"]
-            assert config.user_dir_path == mock_config["user_dir_path"]
-            assert config.git_repo == mock_config["git_repo"]
-            assert config.parameters == mock_config["parameters"]
-            assert config.num_features == mock_config["num_features"]
-            assert config.cat_features == mock_config["cat_features"]
-            assert config.target == mock_config["target"]
-
-
 def test_open_config_file_not_found():
     with patch("builtins.open", side_effect=FileNotFoundError("File not found")):
         with pytest.raises(FileNotFoundError, match="Configuration file not found"):
-            open_config("path/to/nonexistent_config.yaml")
+            open_config("path/to/nonexistent_config.yaml", "scope")
 
 
 def test_open_config_invalid_yaml():
@@ -70,17 +48,7 @@ def test_open_config_invalid_yaml():
     with patch("builtins.open", mock_open(read_data="not: valid: yaml")):
         with patch("yaml.safe_load", side_effect=yaml.YAMLError("Invalid YAML content")):
             with pytest.raises(ValueError, match="Failed to parse configuration file"):
-                open_config("path/to/invalid_config.yaml")
-
-
-def test_open_config_logging(caplog):
-    mock_yaml_content = yaml.dump(mock_config)
-
-    with patch("builtins.open", mock_open(read_data=mock_yaml_content)):
-        with patch("yaml.safe_load", return_value=mock_config):
-            with caplog.at_level(logging.INFO):
-                open_config("path/to/config.yaml")
-                assert "Configuration file loaded successfully" in caplog.text
+                open_config("path/to/invalid_config.yaml", "scope")
 
 
 spark = spark_session

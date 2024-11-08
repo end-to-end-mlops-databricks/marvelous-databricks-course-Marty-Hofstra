@@ -13,7 +13,7 @@ def featurisation():
     mlflow.set_registry_uri("databricks-uc")
     mlflow.set_tracking_uri("databricks")
 
-    config = open_config("../../../../project_config.yaml")
+    config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
     hotel_reservation_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
 

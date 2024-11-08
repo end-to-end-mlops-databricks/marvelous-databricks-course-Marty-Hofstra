@@ -11,7 +11,7 @@ from hotel_reservations.utils import check_repo_info, get_error_metrics, open_co
 def basic_model():
     spark = SparkSession.builder.getOrCreate()
 
-    config = open_config("../../../../project_config.yaml")
+    config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
     mlflow.set_tracking_uri("databricks")
     mlflow.set_registry_uri("databricks-uc")
@@ -65,7 +65,7 @@ def basic_model():
     model_version = mlflow.register_model(
         model_uri=f"runs:/{run_id}/gbt-pipeline-model",
         name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic",
-        tags={"git_sha": git_sha},
+        tags={"git_sha": git_sha, "branch": git_branch},
     )
 
     print(model_version)
