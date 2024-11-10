@@ -51,12 +51,23 @@ def feature_serving():
         perform_full_copy=False,
     )
 
+    token = (
+        dbutils.notebook.entry_point.getDbutils()  # type: ignore # noqa: F821
+        .notebook()
+        .getContext()
+        .apiToken()
+        .get()
+    )
+    host = spark.conf.get("spark.databricks.workspaceUrl")
+
+    serving_instance = Serving("hotel-reservations-feature-serving", 10, host, token, "Booking_ID")
+
     try:
-        online_table_pipeline = featurisation_instance.workspace.online_tables.create(  # type: ignore # noqa: F841
+        online_table_pipeline = serving_instance.workspace.online_tables.create(  # type: ignore # noqa: F841
             name=f"{featurisation_instance.feature_table_name}_online", spec=feature_spec
         )
     except Exception as e:
-        print(f"Failed to create serving endpoint '{featurisation_instance.feature_table_name}_online': {e}")
+        print(f"Failed to create Online feature table '{featurisation_instance.feature_table_name}_online': {e}")
 
     features = [
         FeatureLookup(
@@ -69,24 +80,16 @@ def feature_serving():
     feature_spec_name = f"{config.catalog}.{config.db_schema}.return_predictions"
     fe = feature_engineering.FeatureEngineeringClient()
 
-    fe.create_feature_spec(name=feature_spec_name, features=features, exclude_columns=None)
-
-    token = (
-        dbutils.notebook.entry_point.getDbutils()  # type: ignore # noqa: F821
-        .notebook()
-        .getContext()
-        .apiToken()
-        .get()
-    )
-    host = spark.conf.get("spark.databricks.workspaceUrl")
-
-    serving_instance = Serving("hotel-reservations-feature-serving", 10, host, token, "Booking_ID")
+    try:
+        fe.create_feature_spec(name=feature_spec_name, features=features, exclude_columns=None)
+    except Exception as e:
+        print(f"Failed to create feature spec '{feature_spec_name}': {e}")
 
     serving_instance.create_serving_endpoint(feature_spec_name)
 
     booking_id_list = predictions_df.select("Booking_ID").rdd.flatMap(lambda x: x).collect()
 
-    response_status, response_text, latency = serving_instance.endpoint_request(random.choice(booking_id_list))
+    response_status, response_text, latency = serving_instance.send_request(random.choice(booking_id_list))
 
     print("Response status:", response_status)
     print("Reponse text:", response_text)
