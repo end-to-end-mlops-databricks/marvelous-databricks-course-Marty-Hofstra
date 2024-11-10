@@ -31,7 +31,7 @@ class Serving:
                 ),
             )
         except Exception as e:
-            print(f"Failed to create serving endpoint '{self.serving_endpoint_name}': {e}")
+            print(f"Serving endpoint '{self.serving_endpoint_name}' not created: {e}")
 
     def send_request(self, pk_value: str) -> tuple[int, str, float]:
         start_time = time.time()

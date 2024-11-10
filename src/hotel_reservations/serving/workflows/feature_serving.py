@@ -67,7 +67,7 @@ def feature_serving():
             name=f"{featurisation_instance.feature_table_name}_online", spec=feature_spec
         )
     except Exception as e:
-        print(f"Failed to create Online feature table '{featurisation_instance.feature_table_name}_online': {e}")
+        print(f"Online feature table '{featurisation_instance.feature_table_name}_online' not created: {e}")
 
     features = [
         FeatureLookup(
@@ -83,7 +83,7 @@ def feature_serving():
     try:
         fe.create_feature_spec(name=feature_spec_name, features=features, exclude_columns=None)
     except Exception as e:
-        print(f"Failed to create feature spec '{feature_spec_name}': {e}")
+        print(f"Feature spec'{feature_spec_name}' not created: {e}")
 
     serving_instance.create_serving_endpoint(feature_spec_name)
 
