@@ -1,9 +1,6 @@
 # Databricks notebook source
 
 # COMMAND ----------
-# MAGIC %pip install databricks_cli
-
-# COMMAND ----------
 # imports
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.secrets.api import SecretApi
