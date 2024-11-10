@@ -72,7 +72,7 @@ def feature_serving():
     fe.create_feature_spec(name=feature_spec_name, features=features, exclude_columns=None)
 
     token = (
-        featurisation_instance.worskspace.dbutils.notebook.entry_point.getDbutils()
+        dbutils.notebook.entry_point.getDbutils()  # type: ignore # noqa: F821
         .notebook()
         .getContext()
         .apiToken()
@@ -96,3 +96,7 @@ def feature_serving():
 
     print("\nTotal execution time:", total_execution_time, "seconds")
     print("Average latency per request:", average_latency, "seconds")
+
+
+if __name__ == "__main__":
+    feature_serving()

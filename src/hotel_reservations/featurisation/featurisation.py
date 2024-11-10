@@ -33,8 +33,6 @@ class Featurisation:
         if self.primary_key not in self.feature_data.columns:
             raise ValueError(f"Primary key column '{self.primary_key}' not found in feature_data")
 
-        fe = FeatureEngineeringClient()
-
         try:
             fe = FeatureEngineeringClient()
         except Exception as e:
