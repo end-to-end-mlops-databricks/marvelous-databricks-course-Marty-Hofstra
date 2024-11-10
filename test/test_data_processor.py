@@ -117,7 +117,7 @@ def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_datafram
 
 
 @patch.object(DataProcessor, "read_UC_spark")
-def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
+def test_data_after_dropping1(mock_read_UC_spark, spark_session: SparkSession):
     data_missing_target = [
         {
             "no_of_adults": 25,
@@ -165,3 +165,58 @@ def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
     assertDataFrameEqual(processor.df, expected)
 
     assert processor.df.filter(col("booking_status").isNull()).count() == 0, "Should not have null values in target"
+
+
+@patch.object(DataProcessor, "read_UC_spark")
+def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
+    null_data_variations = [
+        {
+            "no_of_adults": None,
+            "avg_price_per_room": None,  # Multiple null values
+            "type_of_meal_plan": "Meal Plan 1",
+            "required_car_parking_space": True,
+            "booking_status": 1,
+        },
+        {
+            "no_of_adults": 30,
+            "avg_price_per_room": 60000,
+            "type_of_meal_plan": None,  # Null categorical
+            "required_car_parking_space": False,
+            "booking_status": 0,
+        },
+    ]
+
+    data_non_missing_target = [
+        {
+            "no_of_adults": None,
+            "avg_price_per_room": 50000,
+            "type_of_meal_plan": "Meal Plan 1",
+            "required_car_parking_space": True,
+            "booking_status": 1,
+        },
+        {
+            "no_of_adults": 30,
+            "avg_price_per_room": 60000,
+            "type_of_meal_plan": "Meal Plan 2",
+            "required_car_parking_space": False,
+            "booking_status": 0,
+        },
+    ]
+
+    sparse_df = spark_session.createDataFrame(null_data_variations)
+    mock_read_UC_spark.return_value = sparse_df
+
+    processor = DataProcessor(mock_config, spark)
+    processor.preprocess_data()
+
+    expected = spark_session.createDataFrame(data_non_missing_target)
+
+    # Additional assertions
+    expected_schema = expected.schema
+    assert processor.df.schema == expected_schema, "Schema should match after preprocessing"
+
+    # Verify non-target null handling
+    null_counts = {
+        field.name: processor.df.filter(col(field.name).isNull()).count() for field in processor.df.schema.fields
+    }
+    assert null_counts["booking_status"] == 0, "Target should not have nulls"

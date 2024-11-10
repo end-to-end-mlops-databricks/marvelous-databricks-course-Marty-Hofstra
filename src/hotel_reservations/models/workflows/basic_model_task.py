@@ -1,7 +1,7 @@
 import mlflow
 from mlflow.models import infer_signature
 from pyspark.ml import Pipeline
-from pyspark.ml.regression import GBTRegressor
+from pyspark.ml.classification import GBTClassifier
 from pyspark.sql import SparkSession
 
 from hotel_reservations.data_processing.workflows.data_processing_task import preprocessing
@@ -30,7 +30,7 @@ def basic_model():
     pipeline = Pipeline(
         stages=preprocessing_stages
         + [
-            GBTRegressor(
+            GBTClassifier(
                 featuresCol="features",
                 labelCol="label",
                 predictionCol="prediction",
@@ -54,7 +54,7 @@ def basic_model():
         print(f"Mean Absolute Error: {error_metrics['mae']}")
         print(f"R2 Score: {error_metrics['r2']}")
 
-        mlflow.log_param("model_type", "GBTRegressor with preprocessing")
+        mlflow.log_param("model_type", "GBTClassifier with preprocessing")
         mlflow.log_metric("mse", error_metrics["mse"])
         mlflow.log_metric("mae", error_metrics["mae"])
         mlflow.log_metric("r2_score", error_metrics["r2"])

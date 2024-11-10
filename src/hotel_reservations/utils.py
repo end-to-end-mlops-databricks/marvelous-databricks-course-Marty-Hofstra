@@ -39,11 +39,15 @@ def open_config(path: str, scope: str) -> ProjectConfig:
         logging.error(msg)
         raise ValueError(msg) from e
 
-    w = WorkspaceClient(profile=os.environ.get("DATABRICKS_PROFILE", None))
-
-    config["user_dir_path"] = w.dbutils.secrets.get(scope=scope, key="user_dir_path")
-    config["volume_whl_path"] = w.dbutils.secrets.get(scope=scope, key="volume_whl_path")
-    return ProjectConfig(**config)
+    try:
+        w = WorkspaceClient(profile=os.environ.get("DATABRICKS_PROFILE", None))
+        config["user_dir_path"] = w.dbutils.secrets.get(scope=scope, key="user_dir_path")
+        config["volume_whl_path"] = w.dbutils.secrets.get(scope=scope, key="volume_whl_path")
+        return ProjectConfig(**config)
+    except Exception as e:
+        msg = f"Failed to retrieve Databricks secrets from scope '{scope}': {e}"
+        logging.error(msg)
+        raise RuntimeError(msg) from e
 
 
 def get_error_metrics(
