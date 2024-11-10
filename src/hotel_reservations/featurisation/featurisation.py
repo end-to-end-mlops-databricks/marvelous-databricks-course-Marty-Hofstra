@@ -51,7 +51,7 @@ class Featurisation:
                     df=self.feature_data,
                     mode="merge",
                 )
-                None if self.check_table_CDF_config(feature_table_name, spark) else self.enable_change_data_feed(
+                None if self.check_table_CDF_property(feature_table_name, spark) else self.enable_change_data_feed(
                     feature_table_name, spark
                 )
                 return f"The feature data has been succesfully upserted into {feature_table_name}"
@@ -68,6 +68,18 @@ class Featurisation:
             raise RuntimeError(f"Failed to write to Feature Store: {str(e)}") from e
 
     def enable_change_data_feed(self, feature_table_name: str, spark: SparkSession) -> str:
+        """Enable the change data feed property on the feature table.
+
+        Args:
+            feature_table_name (str): Name of the feature table
+            spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
+
+        Raises:
+            RuntimeError: If the table cannot be found or if it is not a Delta table
+
+        Returns:
+            str: Message on succesfull enabling of the change datat feed property on the feature table
+        """
         try:
             spark.sql(f"""
                 ALTER TABLE {feature_table_name}
@@ -77,7 +89,19 @@ class Featurisation:
         except Exception as e:
             raise RuntimeError(f"Failed to enable change data feed for {feature_table_name}: {str(e)}") from e
 
-    def check_table_CDF_config(self, feature_table_name: str, spark: SparkSession) -> bool:
+    def check_table_CDF_property(self, feature_table_name: str, spark: SparkSession) -> bool:
+        """Checks if the change data feed (CDF) property is already enable on the table
+
+        Args:
+            feature_table_name (str): Name of the feature table
+            spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
+
+        Raises:
+            RuntimeError: If the table cannot be found or if it is not a Delta table
+
+        Returns:
+            bool: True when the change data feed property is already enabled
+        """
         try:
             table_CDF = (
                 spark.sql(f"DESCRIBE DETAIL delta.`{feature_table_name}`")
