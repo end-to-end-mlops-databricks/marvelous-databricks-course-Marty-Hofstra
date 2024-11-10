@@ -22,20 +22,27 @@ def write_feature_table(
         raise ValueError(f"Primary key column '{primary_key}' not found in feature_data")
 
     feature_table_name = f"{catalog}.{schema}.{use_case_name}_features"
-    fe = FeatureEngineeringClient()
 
-    if spark.catalog.tableExists(feature_table_name):
-        fe.write_table(
-            name=feature_table_name,
-            df=feature_data,
-            mode="merge",
-        )
-        return f"The feature data has been succesfully upserted into {feature_table_name}"
-    else:
-        fe.create_table(
-            name=feature_table_name,
-            df=feature_data,
-            primary_keys=primary_key,
-            description="Hotel reservation feature data",
-        )
-        return f"Table {feature_table_name} has been created in the Feature Store successfully."
+    try:
+        fe = FeatureEngineeringClient()
+    except Exception as e:
+        raise RuntimeError(f"Failed to initialize FeatureEngineeringClient: {str(e)}") from e
+
+    try:
+        if spark.catalog.tableExists(feature_table_name):
+            fe.write_table(
+                name=feature_table_name,
+                df=feature_data,
+                mode="merge",
+            )
+            return f"The feature data has been succesfully upserted into {feature_table_name}"
+        else:
+            fe.create_table(
+                name=feature_table_name,
+                df=feature_data,
+                primary_keys=primary_key,
+                description="Hotel reservation feature data",
+            )
+            return f"Table {feature_table_name} has been created in the Feature Store successfully."
+    except Exception as e:
+        raise RuntimeError(f"Failed to write to Feature Store: {str(e)}") from e
