@@ -31,8 +31,11 @@ The `hotel_reservations` package (as a .whl) can be created and stored in DBFS b
 In the cluster configuration, click on `Libraries` and then `Install new`, select `Volumes` and navigate to the path where you stored the wheel. The package functionality can be imported with `import hotel_reservations`. An example of usage of the data processing functions is as follows:
 
 ```
-with open("../../../project_config.yaml", "r") as file:
-    config = yaml.safe_load(file)
+from pyspark.sql import SparkSession
+from hotel_reservations.data_processing.data_processor import DataProcessor
+from hotel_reservations.utils import open_config
+
+config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
 data_preprocessor = DataProcessor(config, spark)
 
