@@ -18,7 +18,7 @@ def feature_serving():
 
     config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
-    preprocessing_stages = preprocessing()  # type: ignore # noqa: F841
+    preprocessing()
     train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
     test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 

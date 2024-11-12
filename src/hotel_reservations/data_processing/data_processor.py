@@ -12,8 +12,10 @@ class DataProcessor:
 
     Attributes
     ----------
-    config : ProjectConfig
+    config: ProjectConfig
         Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+    spark: SparkSession
+        The Spark session is required for running Spark functionality outside of Databricks.
 
     Methods
     -------
@@ -134,7 +136,8 @@ class DataProcessor:
             ValueError: If `test_size` is not between 0 and 1.
 
         Returns:
-            Tuple[DataFrame, DataFrame]: The input data split up into a training and test set
+            train_data (DataFrame): Data used for training the model
+            test_data (DataFrame): Data used for testing the model
         """
         if not 0 < test_size < 1:
             raise ValueError(f"test_size must be between 0 and 1, got {test_size}")
@@ -142,7 +145,7 @@ class DataProcessor:
         if self.df.isEmpty():
             raise ValueError("Cannot split an empty DataFrame")
 
-        train: DataFrame
-        test: DataFrame
-        train, test = self.df.randomSplit([1.0 - test_size, test_size], seed=random_state)
-        return train, test
+        train_data: DataFrame
+        test_data: DataFrame
+        train_data, test_data = self.df.randomSplit([1.0 - test_size, test_size], seed=random_state)
+        return train_data, test_data

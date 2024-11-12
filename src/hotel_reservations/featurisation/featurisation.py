@@ -5,10 +5,34 @@ from hotel_reservations.types.project_config_types import ProjectConfig
 
 
 class Featurisation:
+    """A class used for featurisation
+
+    Attributes
+    ----------
+    config: ProjectConfig
+        Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+    feature_data: DataFrame
+        Dataframe containing feature data to write to the Feature Store
+    feature_type: str
+        Type of features for clear naming of the feature table, e.g. 'predictions_features'
+    primary_key: str
+        Name of the column to use as PK in the Feature table
+
+    Methods
+    -------
+    write_feature_table:
+        Write feature data to the databricks Feature Store. If the table already exists, the data will be upserted. If not, then a table will be created in the Feature Store.
+    enable_change_data_feed:
+        Enable the change data feed property on the feature table.
+    check_table_CDF_property:
+        Checks if the change data feed (CDF) property is already enable on the table
+    """
+
     def __init__(self, config: ProjectConfig, feature_data: DataFrame, features_type: str, primary_key: str) -> None:
         """Constructs all the necessary attributes for the featurisation object
 
         Args:
+            config (ProjectConfig): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             feature_data (DataFrame): Dataframe containing feature data to write to the Feature Store
             features_type (str): Type of features for clear naming of the feature table, e.g. 'predictions_features'
             primary_key (str): Name of the column to use as PK in the Feature table

@@ -19,9 +19,7 @@ def featurisation():
 
     featurisation_instance = Featurisation(config, hotel_reservation_data, "input_features", "Booking_ID")
 
-    featurisation_instance.write_feature_table(
-        hotel_reservation_data, config.catalog, config.db_schema, config.use_case_name, "Booking_ID", spark
-    )
+    featurisation_instance.write_feature_table(spark)
 
     fe = feature_engineering.FeatureEngineeringClient()
 
