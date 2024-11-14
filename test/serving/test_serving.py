@@ -6,19 +6,44 @@ from hotel_reservations.serving.serving import Serving
 
 
 @pytest.fixture
+def mock_post():
+    with patch("requests.post") as mock_post:
+        yield mock_post
+
+
+@pytest.fixture
+def mock_time():
+    with patch("time.time", side_effect=[1, 2]) as mock_time:
+        yield mock_time
+
+
+@pytest.fixture
+def mock_random_choice():
+    with patch("random.choice", return_value="random_id") as mock_random_choice:
+        yield mock_random_choice
+
+
+@pytest.fixture
+def mock_send_request():
+    with patch.object(Serving, "send_request", return_value=(200, "success", 1.5)) as mock_send_request:
+        yield mock_send_request
+
+
+@pytest.fixture
 def serving_instance():
-    return Serving(
-        serving_endpoint_name="test_endpoint",
-        num_requests=5,
-        host="test_host",
-        token="test_token",
-        primary_key="test_pk",
-    )
+    # Setup the Serving instance within a fixture to ensure it doesn't initialize
+    # in a way that requires Databricks authentication.
+    with patch("hotel_reservations.serving.serving.Serving.__init__", return_value=None) as mock_init:  # type: ignore # noqa: F841
+        serving_instance = Serving()
+        serving_instance.serving_endpoint_name = "test_endpoint"
+        serving_instance.num_requests = 5
+        serving_instance.host = "test_host"
+        serving_instance.token = "test_token"
+        serving_instance.primary_key = "test_pk"
+        yield serving_instance
 
 
-@patch("requests.post")  # Mock requests.post
-@patch("time.time", side_effect=[1, 2])  # Mock time to control latency calculation
-def test_send_request(mock_time, mock_post, serving_instance):
+def test_send_request(mock_post, mock_time, serving_instance):
     pk_value = "test_pk_value"
     mock_post.return_value.status_code = 200
     mock_post.return_value.text = "success"
@@ -39,8 +64,6 @@ def test_send_request(mock_time, mock_post, serving_instance):
     assert latency == 1  # Since we mocked time.time to return 1 and 2, latency = 2 - 1 = 1
 
 
-@patch("random.choice", return_value="random_id")  # Mock random.choice
-@patch.object(Serving, "send_request", return_value=(200, "success", 1.5))  # Mock send_request method
 def test_send_request_random_id(mock_send_request, mock_random_choice, serving_instance):
     id_list = ["id1", "id2", "id3"]
 
