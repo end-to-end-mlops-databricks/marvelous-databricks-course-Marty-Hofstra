@@ -108,3 +108,6 @@ mlruns/
 
 # spark warehouse
 spark-warehouse/
+
+# reports
+reports/
