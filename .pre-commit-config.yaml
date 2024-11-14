@@ -1,4 +1,4 @@
-exclude: ^tests/resources/
+exclude: ^(tests/resources/|notebooks/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -19,5 +19,5 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-PyYAML]
+        additional_dependencies: [types-PyYAML, types-requests]
         args: [--python-version=3.11, --ignore-missing-imports]

@@ -102,3 +102,9 @@ dmypy.json
 
 # pre-commit
 .ruff_cache/
+
+# mlruns
+mlruns/
+
+# spark warehouse
+spark-warehouse/

@@ -1,8 +1,18 @@
+# Prerequisites:
+#   - uv (Python package manager)
+#   - databricks CLI
+
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help:
+	@echo "Available targets:"
+	@echo "  init                 - Synchronize dependencies using uv"
+	@echo "  build_and_store_whl - Build package and store in DBFS"
+	@echo "  pre_commit_all_files - Run pre-commit checks on all files"
+
 init:
-	uv venv -p 3.11 venv --python-preference managed && \
-	source venv/bin/activate && \
-	uv pip install -r pyproject.toml --all-extras && \
-	uv lock
+	uv sync $(if $(extra),--extra=$(extra))
 
 get_package_name:
 	@python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])"

@@ -4,17 +4,15 @@ from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler
 from pyspark.sql import DataFrame, SparkSession
 
-from hotel_reservations.types.project_config_types import ProjectConfigType
+from hotel_reservations.types.project_config_types import ProjectConfig
 
 
 class DataProcessor:
     """A class to preprocess the input data
 
-    ...
-
     Attributes
     ----------
-    config : ProjectConfigType
+    config : ProjectConfig
         Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
 
     Methods
@@ -27,15 +25,15 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: ProjectConfigType, spark: SparkSession) -> None:
+    def __init__(self, config: ProjectConfig, spark: SparkSession) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
-            config (ProjectConfigType): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+            config (ProjectConfig): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
-        self.config: ProjectConfigType = config
-        self.df: DataFrame = self.read_UC_spark(config["catalog"], config["schema"], config["table_name"], spark)
+        self.config: ProjectConfig = config
+        self.df: DataFrame = self.read_UC_spark(config.catalog, config.db_schema, config.use_case_name, spark)
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
         self.preprocessor: Optional[Pipeline] = None
@@ -61,45 +59,69 @@ class DataProcessor:
         except Exception as e:
             raise ValueError(f"Failed to read table '{three_level_table_name}': {str(e)}") from e
 
-    def preprocess_data(self) -> None:
+    def preprocess_data(self) -> List:
         """Preprocessing of data, consisting of the following steps:
         - Imputation of missing values
         - Handling of categorical features
         - Use of the VectorAssembler to combine numeric and categorical features
         - Combine all numeric and categorical features into one feature column
         - Build the preprocessing pipeline
+
+        Returns:
+            List: Preprocessing stages required for the PySpark ML pipeline
         """
-        target: str = self.config["target"]
+        target: str = self.config.target
         self.df = self.df.dropna(subset=[target])
 
+        # Extracting input column names from the config
+        num_feature_cols = list(self.config.num_features.keys())
+        cat_feature_cols = list(self.config.cat_features.keys())
+
+        if not num_feature_cols and not cat_feature_cols:
+            raise ValueError("No feature columns specified in config")
+
+        target_indexer: StringIndexer = StringIndexer(inputCol=target, outputCol="label")
+
+        # Set up the imputer
         numeric_imputer: Imputer = Imputer(
-            inputCols=self.config["num_features"], outputCols=[f"{c}_imputed" for c in self.config["num_features"]]
+            inputCols=num_feature_cols, outputCols=[f"{c}_imputed" for c in num_feature_cols]
         )
 
+        # Create the scaler
         scaler: StandardScaler = StandardScaler(inputCol="features_num", outputCol="scaled_features")
 
+        # StringIndexer and OneHotEncoder for categorical features
         indexers: List[StringIndexer] = [
-            StringIndexer(inputCol=col, outputCol=f"{col}_indexed") for col in self.config["cat_features"]
+            StringIndexer(inputCol=col, outputCol=f"{col}_indexed") for col in cat_feature_cols
         ]
         encoders: List[OneHotEncoder] = [
-            OneHotEncoder(inputCol=f"{col}_indexed", outputCol=f"{col}_encoded") for col in self.config["cat_features"]
+            OneHotEncoder(inputCol=f"{col}_indexed", outputCol=f"{col}_encoded") for col in cat_feature_cols
         ]
+
+        # Assemble numeric features
         assembler_numeric: VectorAssembler = VectorAssembler(
-            inputCols=[f"{c}_imputed" for c in self.config["num_features"]], outputCol="features_num"
+            inputCols=[f"{c}_imputed" for c in num_feature_cols], outputCol="features_num"
         )
 
+        # Assemble categorical features
         assembler_categorical: VectorAssembler = VectorAssembler(
-            inputCols=[f"{col}_encoded" for col in self.config["cat_features"]], outputCol="features_cat"
+            inputCols=[f"{col}_encoded" for col in cat_feature_cols], outputCol="features_cat"
         )
 
+        # Combine numeric and categorical features
         assembler_all: VectorAssembler = VectorAssembler(
             inputCols=["scaled_features", "features_cat"], outputCol="features"
         )
 
-        stages: List = (
-            [numeric_imputer, assembler_numeric, scaler] + indexers + encoders + [assembler_categorical, assembler_all]
+        # Building the pipeline
+        preprocessing_stages: List = (
+            [target_indexer, numeric_imputer, assembler_numeric, scaler]
+            + indexers
+            + encoders
+            + [assembler_categorical, assembler_all]
         )
-        self.preprocessor = Pipeline(stages=stages)
+
+        return preprocessing_stages
 
     def split_data(self, test_size: float = 0.2, random_state: int = 42) -> Tuple[DataFrame, DataFrame]:
         """Splits the DataFrame into training and test sets

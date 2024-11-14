@@ -1,4 +1,3 @@
-from databricks.connect import DatabricksSession
 from pyspark.sql import SparkSession
 from pytest import fixture, mark, param
 
@@ -22,5 +21,4 @@ def spark_session() -> SparkSession:
     Returns:
         SparkSession: A Spark session to use
     """
-    spark = DatabricksSession.builder.getOrCreate()
-    return spark
+    return SparkSession.builder.appName("MyApp").master("local[*]").getOrCreate()

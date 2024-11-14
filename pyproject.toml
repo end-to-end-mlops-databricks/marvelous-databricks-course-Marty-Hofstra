@@ -1,31 +1,40 @@
 [project]
 name = "hotel_reservations"
-version = "0.0.1"
+version = "0.0.2"
 description = "Hotel reservations package"
 readme = "README.md"
 requires-python = "==3.11.*"
-dependencies = ["lightgbm>=4.5.0, <5",
-                "scikit-learn>=1.5.1, <2",
-                "cloudpickle>=3.0.0, <4",
-                "mlflow>=2.16.0, <3",
-                "numpy>=1.26.4, <2",
-                "pandas>=2.2.2, <3",
-                "pyarrow>=15.0.2, <16",
-                "cffi>=1.17.1, <2",
-                "scipy>=1.14.1, <2",
-                "matplotlib>=3.9.2, <4",
-                "databricks-feature-engineering>=0.6, <1",
-                "toml>=0.10.2, <11",
-                "PyYAML>=6.0, <7",
-                "pre-commit>=3.0.0, <4",
-                "pyspark==3.5.0"]
+dependencies = [
+    "lightgbm>=4.5.0, <5",
+    "scikit-learn>=1.5.1, <2",
+    "cloudpickle>=3.0.0, <4",
+    "mlflow>=2.16.0, <3",
+    "numpy>=1.26.4, <2",
+    "pandas>=2.2.2, <3",
+    "pyarrow>=15.0.2, <16",
+    "cffi>=1.17.1, <2",
+    "scipy>=1.14.1, <2",
+    "matplotlib>=3.9.2, <4",
+    "databricks-feature-engineering>=0.6, <1",
+    "toml>=0.10.2, <11",
+    "PyYAML>=6.0, <7",
+    "pre-commit>=3.0.0, <4",
+    "requests>=2.31.0, <3",
+    "pydantic>=1.10.6,<2",
+]
 
 [project.optional-dependencies]
 dev = ["databricks-connect>=15.4.1, <16",
        "databricks-sdk>=0.32.0, <0.33",
        "ipykernel>=6.29.5, <7",
-       "pip>=24.2",
-       "pytest>=7.4.2, <8"]
+       "pip>=24.2, <25",
+       "hotel_reservations[test]"]
+
+test = [
+    "pyspark==3.5.0",
+    "pytest>=7.4.2, <8",
+    "pip>=24.2"
+]
 
 [tool.ruff]
 line-length = 120
@@ -42,3 +51,11 @@ ignore = [
 
 [tool.ruff.format]
 indent-style = "space"
+
+[tools.setuptools]
+package_dir = {"" = "src"}
+packages = ["hotel_reservations"]
+
+[build-system]
+requires = ["setuptools==68.0.0", "wheel==0.40.0","setuptools_scm[toml]>=3.4"]
+build-backend = "setuptools.build_meta"
