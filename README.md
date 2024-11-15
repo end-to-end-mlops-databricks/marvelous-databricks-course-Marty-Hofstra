@@ -28,11 +28,20 @@ Note: the DBR has to be 15.4 or higher, otherwise it will conflict with the `dat
 The `hotel_reservations` package (as a .whl) can be created and stored in DBFS by running `make build_and_store_whl dbfs_path=${dbfs_path}`, where `${dbfs_path}` is the path to the volume in which you want to store the whl.
 
 #### Usage
-In the cluster configuration, click on `Libraries` and then `Install new`, select `Volumes` and navigate to the path where you stored the wheel. The package functionality can be imported with `import hotel_reservations`. An example of usage of the data processing functions is as follows:
+In the cluster configuration, click on `Libraries` and then `Install new`, select `Volumes` and navigate to the path where you stored the wheel. The package functionality can be imported with `import hotel_reservations`.
+
+*Data processing*
+An example of usage of the data processing functions is as follows:
 
 ```
-with open("../../../project_config.yaml", "r") as file:
-    config = yaml.safe_load(file)
+from pyspark.sql import SparkSession
+from hotel_reservations.data_processing.data_processor import DataProcessor
+from hotel_reservations.utils import open_config
+
+spark = SparkSession.builder.getOrCreate()
+
+# Load config from a relative path and add your Databricks secret scope here
+config = open_config("project_config.yaml", scope="databricks_secret_scope")
 
 data_preprocessor = DataProcessor(config, spark)
 
@@ -48,4 +57,71 @@ Y_train = train.select(config.target)
 Y_test = test.select(config.target)
 
 display(X_train)
+```
+
+
+*Featurisation*
+This example shows how to register a table as Feature table.
+```
+from pyspark.sql import SparkSession
+
+from hotel_reservations.featurisation.featurisation import Featurisation
+from hotel_reservations.utils import open_config
+
+spark = SparkSession.builder.getOrCreate()
+
+# Load config from a relative path and add your Databricks secret scope here
+config = open_config("project_config.yaml", scope="databricks_secret_scope")
+
+input_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
+
+# Initiate the Featurisation instance with the config, feature data, feature type (for table naming) and the primary key
+featurisation_instance = Featurisation(config, input_data, "input_features", "primary_key")
+
+# Register the table as a table in teh Databricks Feature Store
+featurisation_instance.write_feature_table(spark)
+```
+
+*Feature serving*
+An example on how to use Feature Serving
+```
+from hotel_reservations.featurisation.featurisation import Featurisation
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Load config from a relative path and add your Databricks secret scope here
+config = open_config("project_config.yaml", scope="databricks_secret_scope")
+
+prediction_df = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_predictions")
+
+token = (
+        dbutils.notebook.entry_point.getDbutils()  # type: ignore # noqa: F821
+        .notebook()
+        .getContext()
+        .apiToken()
+        .get()
+)
+
+host = spark.conf.get("spark.databricks.workspaceUrl")
+
+serving_instance = Serving("serving_endpoint_name", 10, host, token, "primary_key")
+
+# The serving endpoint is created with a Feature Spec
+serving_instance.create_serving_endpoint("feature_spec_name")
+
+pk_list = predictions_df.select("primary_key").rdd.flatMap(lambda x: x).collect()
+
+# Send a request for a random pk value
+response_status, response_text, latency = serving_instance.send_request(random.choice(pk_list))
+
+print("Response status:", response_status)
+print("Reponse text:", response_text)
+print("Execution time:", latency, "seconds")
+
+# Bunch of requests
+total_execution_time, average_latency = serving_instance.execute_and_profile_requests(pk_list)
+
+print("\nTotal execution time:", total_execution_time, "seconds")
+print("Average latency per request:", average_latency, "seconds")
 ```

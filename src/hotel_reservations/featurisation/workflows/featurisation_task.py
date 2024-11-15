@@ -4,7 +4,7 @@ from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
-from hotel_reservations.featurisation.featurisation import write_feature_table
+from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.utils import open_config
 
 
@@ -17,9 +17,9 @@ def featurisation():
 
     hotel_reservation_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
 
-    write_feature_table(
-        hotel_reservation_data, config.catalog, config.db_schema, config.use_case_name, "Booking_ID", spark
-    )
+    featurisation_instance = Featurisation(config, hotel_reservation_data, "input_features", "Booking_ID")
+
+    featurisation_instance.write_feature_table(spark)
 
     fe = feature_engineering.FeatureEngineeringClient()
 
