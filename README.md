@@ -71,7 +71,7 @@ from hotel_reservations.utils import open_config
 spark = SparkSession.builder.getOrCreate()
 
 # Load config from a relative path and add your Databricks secret scope here
-config = open_config("../../../../project_config.yaml", scope="databricks_secret_scope")
+config = open_config("project_config.yaml", scope="databricks_secret_scope")
 
 input_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
 
@@ -89,6 +89,9 @@ from hotel_reservations.featurisation.featurisation import Featurisation
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
+
+# Load config from a relative path and add your Databricks secret scope here
+config = open_config("project_config.yaml", scope="databricks_secret_scope")
 
 prediction_df = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_predictions")
 
