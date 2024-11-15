@@ -1,3 +1,4 @@
+import logging
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -5,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
+
+logging.basicConfig(level=logging.ERROR)
 
 
 class Serving:
@@ -78,7 +81,8 @@ class Serving:
                 ),
             )
         except Exception as e:
-            print(f"Serving endpoint '{self.serving_endpoint_name}' not created: {e}")
+            logging.error(f"Failed to create serving endpoint '{self.serving_endpoint_name}': {e}")
+            raise
 
     def send_request(self, pk_value: str) -> tuple[int, str, float]:
         """Sends a request to the endpoint with the primary key value as input
@@ -87,24 +91,30 @@ class Serving:
             pk_value (str): Value of the primary key for which the prediction is requested
 
         Returns:
-            reponse_status (str): Status code of the response
+            reponse_status (int): Status code of the response
             reponse_text (str): The content of the response
             latency (float): Latency in seconds
+
+        Raises:
+            requests.exceptions.RequestException: If a request error occurs.
         """
-        start_time = time.time()
-        serving_endpoint = f"https://{self.host}/serving-endpoints/{self.serving_endpoint_name}/invocations"
-        response = requests.post(
-            f"{serving_endpoint}",
-            headers={"Authorization": f"Bearer {self.token}"},
-            json={"dataframe_records": [{self.primary_key: pk_value}]},
-        )
-        end_time = time.time()
-        latency = end_time - start_time
+        try:
+            start_time = time.time()
+            serving_endpoint = f"https://{self.host}/serving-endpoints/{self.serving_endpoint_name}/invocations"
+            response = requests.post(
+                f"{serving_endpoint}",
+                headers={"Authorization": f"Bearer {self.token}"},
+                json={"dataframe_records": [{self.primary_key: pk_value}]},
+            )
+            end_time = time.time()
+            latency = end_time - start_time
 
-        response_status = response.status_code
-        response_text = response.text
+            response_status = response.status_code
+            response_text = response.text
 
-        return response_status, response_text, latency
+            return response_status, response_text, latency
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Failed to send an endpoint request: {str(e)}") from e
 
     def send_request_random_id(self, pk_list: list[str]) -> tuple[int, str, float]:
         """Sends a request to the endpoint with a random pk value from the given list
@@ -113,10 +123,16 @@ class Serving:
             pk_list (list[str]): Value of the primary key for which the prediction is requested
 
         Returns:
-            reponse_status (str): Status code of the response
+            reponse_status (int): Status code of the response
             reponse_text (str): The content of the response
             latency (float): Latency in seconds
+
+        Raises:
+            ValueError: If `pk_list` is empty.
         """
+        if not pk_list:
+            raise ValueError("ID list cannot be empty")
+
         random_id = random.choice(pk_list)
 
         response_status, response_text, latency = self.send_request(random_id)
@@ -141,8 +157,11 @@ class Serving:
             futures = [executor.submit(self.send_request_random_id, pk_list) for _ in range(self.num_requests)]
 
             for future in as_completed(futures):
-                latency = future.result()[2]
-                latencies.append(latency)
+                try:
+                    latency = future.result()[2]
+                    latencies.append(latency)
+                except Exception as e:
+                    print(f"An error occurred during request execution: {e}")
 
         total_end_time = time.time()
         total_execution_time = total_end_time - total_start_time
