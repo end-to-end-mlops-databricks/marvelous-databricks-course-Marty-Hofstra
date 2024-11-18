@@ -6,7 +6,6 @@ from databricks.feature_engineering import FeatureLookup
 from databricks.sdk.service.catalog import OnlineTableSpec, OnlineTableSpecTriggeredSchedulingPolicy
 from pyspark.sql import SparkSession
 
-from hotel_reservations.data_processing.workflows.data_processing_task import preprocessing
 from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.serving.serving import Serving
 from hotel_reservations.utils import check_repo_info, open_config
@@ -18,7 +17,6 @@ def feature_serving():
 
     config = open_config("../../../../project_config.yaml", scope="marty-MLOPs-cohort")
 
-    preprocessing()
     train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
     test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 
@@ -34,18 +32,18 @@ def feature_serving():
 
     predict = mlflow.pyfunc.spark_udf(spark, f"runs:/{run_id_basic_model}/gbt-pipeline-model")
 
-    columns_to_serve = ["Booking_ID", "avg_price_per_room", "no_of_week_nights"]
+    columns_to_serve = [config.primary_key, "avg_price_per_room", "no_of_week_nights"]
 
     full_df = train_data.unionByName(test_data)
 
     predictions_df = full_df.withColumn("prediction", predict(*full_df.columns)).select("prediction", *columns_to_serve)
 
-    featurisation_instance = Featurisation(config, predictions_df, "preds", "Booking_ID")
+    featurisation_instance = Featurisation(config, predictions_df, "preds", config.primary_key)
 
     featurisation_instance.write_feature_table(spark)
 
     feature_spec = OnlineTableSpec(
-        primary_key_columns=["Booking_ID"],
+        primary_key_columns=[config.primary_key],
         source_table_full_name=featurisation_instance.feature_table_name,
         run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
         perform_full_copy=False,
@@ -60,7 +58,7 @@ def feature_serving():
     )
     host = spark.conf.get("spark.databricks.workspaceUrl")
 
-    serving_instance = Serving("hotel-reservations-feature-serving", 10, host, token, "Booking_ID")
+    serving_instance = Serving("hotel-reservations-feature-serving", 10, host, token, config.primary_key)
 
     try:
         online_table_pipeline = serving_instance.workspace.online_tables.create(  # type: ignore # noqa: F841
@@ -87,7 +85,7 @@ def feature_serving():
 
     serving_instance.create_serving_endpoint(feature_spec_name)
 
-    booking_id_list = predictions_df.select("Booking_ID").rdd.flatMap(lambda x: x).collect()
+    booking_id_list = predictions_df.select(config.primary_key).rdd.flatMap(lambda x: x).collect()
 
     response_status, response_text, latency = serving_instance.send_request(random.choice(booking_id_list))
 

@@ -77,3 +77,5 @@ cat_features:
     allowed_values: [2017, 2018]
 
 target: booking_status
+
+primary_key: Booking_ID

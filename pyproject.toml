@@ -1,6 +1,6 @@
 [project]
 name = "hotel_reservations"
-version = "0.1.0"
+version = "0.2.0"
 description = "Hotel reservations package"
 readme = "README.md"
 requires-python = "==3.11.*"
@@ -21,6 +21,7 @@ dependencies = [
     "pre-commit>=3.0.0, <4",
     "requests>=2.31.0, <3",
     "pydantic>=1.10.6,<2",
+    "build>=1.2.2, <2"
 ]
 
 [project.optional-dependencies]

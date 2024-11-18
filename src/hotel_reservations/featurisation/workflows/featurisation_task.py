@@ -17,7 +17,7 @@ def featurisation():
 
     hotel_reservation_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
 
-    featurisation_instance = Featurisation(config, hotel_reservation_data, "input_features", "Booking_ID")
+    featurisation_instance = Featurisation(config, hotel_reservation_data, "input_features", config.primary_key)
 
     featurisation_instance.write_feature_table(spark)
 
@@ -48,7 +48,7 @@ def featurisation():
             FeatureLookup(
                 table_name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_features",
                 feature_names=["avg_price_per_room"],
-                lookup_key="Booking_ID",
+                lookup_key=config.primary_key,
             ),
             FeatureFunction(
                 udf_name=function_name,
