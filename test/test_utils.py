@@ -345,3 +345,12 @@ def test_generate_synthetic_data_target_variable(mock_input_data, spark):
     target_values = ["Not_Canceled", "Canceled"]
     values = synthetic_data.select(mock_project_config.target).distinct().rdd.flatMap(lambda x: x).collect()
     assert all(value in target_values for value in values)
+
+
+def test_generate_synthetic_data(mock_input_data, spark):
+    # Generate synthetic data with a large number of rows
+    num_rows = 150000
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows=num_rows)
+
+    # Assert the number of rows is capped at 100,000
+    assert synthetic_data.count() == 100000

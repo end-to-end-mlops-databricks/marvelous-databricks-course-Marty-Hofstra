@@ -153,13 +153,14 @@ def generate_synthetic_data(config: ProjectConfig, input_data: DataFrame, num_ro
     """Generates synthetic data in order to simulate data ingestion into the input data.
 
     Args:
-        config (ProjectConfig): _description_
-        input_data (DataFrame): _description_
-        num_rows (int, optional): _description_. Defaults to 1000.
+        config (ProjectConfig): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+        input_data (DataFrame): Current input DataFrame with real data
+        num_rows (int, optional): Number of rows to add to the existing input data. Defaults to 1000.
 
     Returns:
-        DataFrame: _description_
+        DataFrame: The added synthetic data, consisting of num_rows rows
     """
+    num_rows = min(num_rows, 100000)  # Cap the number of rows
     synthetic_data = {}
 
     # Loop through numerical features with constraints
