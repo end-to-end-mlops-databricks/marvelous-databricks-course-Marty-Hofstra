@@ -20,8 +20,7 @@ dependencies = [
     "PyYAML>=6.0, <7",
     "pre-commit>=3.0.0, <4",
     "requests>=2.31.0, <3",
-    "pydantic>=1.10.6,<2",
-    "build>=1.2.2, <2"
+    "pydantic>=1.10.6,<2"
 ]
 
 [project.optional-dependencies]
@@ -29,7 +28,8 @@ dev = ["databricks-connect>=15.4.1, <16",
        "databricks-sdk>=0.32.0, <0.33",
        "ipykernel>=6.29.5, <7",
        "pip>=24.2, <25",
-       "hotel_reservations[test]"]
+       "hotel_reservations[test]",
+       "build>=1.2.2, <2"]
 
 test = [
     "pyspark==3.5.0",

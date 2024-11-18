@@ -11,7 +11,7 @@ import yaml
 from databricks.sdk import WorkspaceClient
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import max as mean
+from pyspark.sql.functions import avg as mean
 from pyspark.sql.functions import stddev
 
 from hotel_reservations.types.project_config_types import ProjectConfig
@@ -149,9 +149,17 @@ def generate_booking_ids_regex(existing_ids: list[str], num_new_ids=1000, prefix
 spark = SparkSession.builder.getOrCreate()
 
 
-def generate_synthetic_data(
-    config: ProjectConfig, input_data: DataFrame, primary_key: str, num_rows: int = 1000
-) -> DataFrame:
+def generate_synthetic_data(config: ProjectConfig, input_data: DataFrame, num_rows: int = 1000) -> DataFrame:
+    """Generates synthetic data in order to simulate data ingestion into the input data.
+
+    Args:
+        config (ProjectConfig): _description_
+        input_data (DataFrame): _description_
+        num_rows (int, optional): _description_. Defaults to 1000.
+
+    Returns:
+        DataFrame: _description_
+    """
     synthetic_data = {}
 
     # Loop through numerical features with constraints
@@ -165,7 +173,7 @@ def generate_synthetic_data(
         synthetic_data[col_name] = np.round(np.random.normal(mean_val, std_val, num_rows))
 
         # Apply min constraints
-        synthetic_data[col_name] = np.maximum(synthetic_data[col_name], constraints["min"])
+        synthetic_data[col_name] = np.maximum(synthetic_data[col_name], constraints["min"]).astype(int)
 
     # Loop through categorical features with allowed values
     cat_features = {

@@ -28,8 +28,11 @@ class Model:
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
         """
         self.config: ProjectConfig = config
-        self.train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
-        self.test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
+        try:
+            self.train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
+            self.test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
+        except Exception as e:
+            raise RuntimeError("Failed to read training or testing data tables") from e
 
     def create_preprocessing_stages(self) -> list:
         """Creates the following ML Pipeline preprocessing stages:

@@ -43,9 +43,8 @@ def preprocessing():
             )
         else:
             refreshed = True
-            train, test = data_preprocessor.split_data()
-            train_new = train.join(new_booking_ids, config.primary_key)
-            test_new = train.join(new_booking_ids, config.primary_key)
+            data_preprocessor.df = data_preprocessor.df.join(new_booking_ids, config.primary_key)
+            train_new, test_new = data_preprocessor.split_data()
             train_new.write.format("delta").mode("append").saveAsTable(
                 f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
             )

@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.2.0] - 2024-11-18
 
 ### Added
-TO BE ADDED
+- Deployment with DAB
+- Util functions for the creation of synthetic data (to simulate data ingestion)
+- Added the primary key to the projectConfig Pydantic, for addition to the project config yaml file
+- Model evaluation task
+- Dpeloy new predictions (as features) task
 ### Changed
-TO BE ADDED
+- Moved the creation of ML pipeline preprocessing stages to a model class
+
 
 ### Fixed
 

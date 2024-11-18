@@ -5,7 +5,7 @@ from databricks.sdk import WorkspaceClient
 from pyspark.sql import SparkSession
 
 from hotel_reservations.featurisation.featurisation import Featurisation
-from hotel_reservations.utils import check_repo_info, open_config
+from hotel_reservations.utils import open_config
 
 
 def deploy_new_model_predictions():
@@ -20,22 +20,17 @@ def deploy_new_model_predictions():
     train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
     test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
 
-    git_branch, git_sha = check_repo_info(
-        f"/Workspace/{config.user_dir_path}/{config.git_repo}",
-        dbutils,  # type: ignore # noqa: F821
-    )
-
     predict = mlflow.pyfunc.spark_udf(
         spark, f"models:/{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic/{model_version}"
     )
 
-    columns_to_serve = ["Booking_ID", "avg_price_per_room", "no_of_week_nights"]
+    columns_to_serve = [config.target, "avg_price_per_room", "no_of_week_nights"]
 
     full_df = train_data.unionByName(test_data)
 
     predictions_df = full_df.withColumn("prediction", predict(*full_df.columns)).select("prediction", *columns_to_serve)
 
-    featurisation_instance = Featurisation(config, predictions_df, "preds", "Booking_ID")
+    featurisation_instance = Featurisation(config, predictions_df, "preds", config.target)
 
     featurisation_instance.write_feature_table(spark)
 

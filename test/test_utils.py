@@ -299,10 +299,9 @@ def mock_input_data(spark):
 
 
 def test_generate_synthetic_data_numerical_constraints(mock_input_data, spark):
-    primary_key = mock_project_config.primary_key
     num_rows = 100
 
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, primary_key, num_rows)
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
 
     # Verify number of rows
     assert synthetic_data.count() == num_rows
@@ -315,10 +314,9 @@ def test_generate_synthetic_data_numerical_constraints(mock_input_data, spark):
 
 
 def test_generate_synthetic_data_categorical_values(mock_input_data, spark):
-    primary_key = mock_project_config.primary_key
     num_rows = 100
 
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, primary_key, num_rows)
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
 
     # Verify categorical features
     cat_features = mock_project_config.cat_features
@@ -329,21 +327,19 @@ def test_generate_synthetic_data_categorical_values(mock_input_data, spark):
 
 
 def test_generate_synthetic_data_primary_keys(mock_input_data, spark):
-    primary_key = mock_project_config.primary_key
     num_rows = 100
 
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, primary_key, num_rows)
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
 
     # Verify primary keys are unique
-    ids = synthetic_data.select(primary_key).rdd.flatMap(lambda x: x).collect()
+    ids = synthetic_data.select(mock_project_config.primary_key).rdd.flatMap(lambda x: x).collect()
     assert len(ids) == len(set(ids))
 
 
 def test_generate_synthetic_data_target_variable(mock_input_data, spark):
-    primary_key = mock_project_config.primary_key
     num_rows = 100
 
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, primary_key, num_rows)
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
 
     # Verify target variable values
     target_values = ["Not_Canceled", "Canceled"]
