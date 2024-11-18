@@ -174,7 +174,7 @@ def generate_synthetic_data(config: ProjectConfig, input_data: DataFrame, num_ro
         synthetic_data[col_name] = np.round(np.random.normal(mean_val, std_val, num_rows))
 
         # Apply min constraints
-        synthetic_data[col_name] = np.maximum(synthetic_data[col_name], constraints["min"]).astype(int)
+        synthetic_data[col_name] = np.maximum(synthetic_data[col_name], constraints["min"])
 
     # Loop through categorical features with allowed values
     cat_features = {

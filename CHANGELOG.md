@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Util functions for the creation of synthetic data (to simulate data ingestion)
 - Added the primary key to the projectConfig Pydantic, for addition to the project config yaml file
 - Model evaluation task
-- Dpeloy new predictions (as features) task
+- Deploy new predictions (as features) task
 ### Changed
 - Moved the creation of ML pipeline preprocessing stages to a model class
 

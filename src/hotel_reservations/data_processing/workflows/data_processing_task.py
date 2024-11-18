@@ -7,6 +7,7 @@ This ensures that the code also works after deploying to a new workspace, while 
 """
 
 from pyspark.sql import SparkSession
+from pyspark.sql.utils import AnalysisException, StreamingQueryException
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.utils import open_config
@@ -42,16 +43,20 @@ def preprocessing():
                 f"The input data {config.catalog}.{config.db_schema}.{config.use_case_name} has no new booking IDs and thus no further preprocessing is required"
             )
         else:
-            refreshed = True
-            data_preprocessor.df = data_preprocessor.df.join(new_booking_ids, config.primary_key)
-            train_new, test_new = data_preprocessor.split_data()
-            train_new.write.format("delta").mode("append").saveAsTable(
-                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
-            )
-            test_new.write.format("delta").mode("append").saveAsTable(
-                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data"
-            )
-            print("The train and test data has been updated for the new booking IDs")
+            try:
+                refreshed = True
+                data_preprocessor.df = data_preprocessor.df.join(new_booking_ids, config.primary_key)
+                train_new, test_new = data_preprocessor.split_data()
+                train_new.write.format("delta").mode("append").saveAsTable(
+                    f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
+                )
+                test_new.write.format("delta").mode("append").saveAsTable(
+                    f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data"
+                )
+                print("The train and test data has been updated for the new booking IDs")
+            except (AnalysisException, StreamingQueryException) as e:
+                print(f"Error appending to Delta tables: {str(e)}")
+                raise
     else:
         refreshed = True
 
