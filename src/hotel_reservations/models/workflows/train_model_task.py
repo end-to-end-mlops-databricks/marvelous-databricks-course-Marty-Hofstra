@@ -41,7 +41,6 @@ def train_model():
     model_instance = Model(config, spark)
 
     preprocessing_stages = model_instance.create_preprocessing_stages()
-    model_uri = ""
 
     git_branch, git_sha = check_repo_info(
         f"/Workspace/{config.user_dir_path}/{config.git_repo}",
@@ -86,13 +85,15 @@ def train_model():
 
         mlflow.spark.log_model(spark_model=model, artifact_path="gbt-pipeline-model", signature=signature)
 
+    model_uri = f"runs:/{run_id}/gbt-pipeline-model"
+
     try:
         mlflow_client = mlflow.tracking.MlflowClient()
         mlflow_client.get_registered_model("users.martijn_hofstra.hotel_reservations_model_basic")
         print(
             "Model already exists, this run will be evaluated in the next task and it is registered as a new model version in case it performs better than the current version"
         )
-    except Exception as e:
+    except mlflow.exceptions.RestException as e:
         print(
             f"This is the first time the training task is run on this workspace and the model will be registered: {str(e)}"
         )
@@ -102,8 +103,6 @@ def train_model():
             tags={"git_sha": git_sha, "branch": git_branch, "job_run_id": job_run_id},
         )
         print("New model registered with version:", model_version.version)
-
-    model_uri = f"runs:/{run_id}/gbt-pipeline-model"
 
     dbutils.jobs.taskValues.set(key="git_sha", value=git_sha)  # type: ignore # noqa: F821
     dbutils.jobs.taskValues.set(key="job_run_id", value=job_run_id)  # type: ignore # noqa: F821
