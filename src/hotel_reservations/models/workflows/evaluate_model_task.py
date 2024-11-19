@@ -1,4 +1,9 @@
-"""This script evaluates the newest experiment run with the run related to the current model version based on the MAE, and if the newest model version is better it is registered."""
+"""This script evaluates the newest experiment run with the run related to the current model version based on the MAE,
+and if the newest model version is better it is registered. If only one experiment run is available, due to the model
+being registered for the first time in the training task, no new model version will be registered.
+Namely, that would just create a second model version that is exactly the same."""
+
+import re
 
 import mlflow
 
@@ -20,21 +25,23 @@ def evaluate_model_task():
         dbutils,  # type: ignore # noqa: F821
     )
 
-    try:
-        previous_run_mae = mlflow.search_runs(
-            experiment_names=[f"/{config.user_dir_path}/{config.use_case_name}"],
-            filter_string=f"tags.branch='{git_branch}'",
-        )["metrics.mae"][1]
-    except IndexError:
-        previous_run_mae = float("inf")
+    mlflow_client = mlflow.tracking.MlflowClient()
+    current_model_run_id = mlflow_client.search_model_versions(
+        f"name='{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic'"
+    )
+    new_run_id = re.search(r"runs:/([^/]+)/", model_uri).group(1)
 
-    current_run_mae = mlflow.search_runs(
+    current_model_mae = mlflow.search_runs(
         experiment_names=[f"/{config.user_dir_path}/{config.use_case_name}"],
-        filter_string=f"tags.branch='{git_branch}'",
+        filter_string=f"run_id='{current_model_run_id}'",
     )["metrics.mae"][0]
 
-    if current_run_mae < previous_run_mae:
-        print("New model is better based on MAE.")
+    new_run_mae = mlflow.search_runs(
+        experiment_names=[f"/{config.user_dir_path}/{config.use_case_name}"], filter_string=f"run_id='{new_run_id}'"
+    )["metrics.mae"][0]
+
+    if new_run_mae < current_model_mae:
+        print("New model is better based on MAE")
         model_version = mlflow.register_model(
             model_uri=model_uri,
             name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic",
@@ -45,7 +52,7 @@ def evaluate_model_task():
         dbutils.jobs.taskValues.set(key="model_version", value=model_version.version)  # type: ignore # noqa: F821
         dbutils.jobs.taskValues.set(key="model_update", value=1)  # type: ignore # noqa: F821
     else:
-        print("Old model is better based on MAE.")
+        print("The model has not improved based on the MAE")
         dbutils.jobs.taskValues.set(key="model_update", value=0)  # type: ignore # noqa: F821
 
 

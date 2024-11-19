@@ -1,5 +1,6 @@
 """This script trains a GBTClassifier model, the workflow is configured such that the training task only runs if the input data has been refreshed.
 In this task only the experiment run is registered in MLFlow, and the model_uri (containing the experiment run_id) is passed on to the next task for evaluation.
+However, if the training task has not been run yet on this workspace (and thus the model does not exists yet in UC), the model will be registered here.
 """
 
 import argparse
@@ -84,6 +85,23 @@ def train_model():
         signature = infer_signature(model_input=train_data, model_output=predictions.select("prediction"))
 
         mlflow.spark.log_model(spark_model=model, artifact_path="gbt-pipeline-model", signature=signature)
+
+    try:
+        mlflow_client = mlflow.tracking.MlflowClient()
+        mlflow_client.get_registered_model("users.martijn_hofstra.hotel_reservations_model_basic")
+        print(
+            "Model already exists, this run will be evaluated in the next task and it is registered as a new model version in case it performs better than the current version"
+        )
+    except Exception as e:
+        print(
+            f"This is the first time the training task is run on this workspace and the model will be registered: {str(e)}"
+        )
+        model_version = mlflow.register_model(
+            model_uri=model_uri,
+            name=f"{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic",
+            tags={"git_sha": git_sha, "branch": git_branch, "job_run_id": job_run_id},
+        )
+        print("New model registered with version:", model_version.version)
 
     model_uri = f"runs:/{run_id}/gbt-pipeline-model"
 
