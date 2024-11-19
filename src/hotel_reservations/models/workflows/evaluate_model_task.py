@@ -17,8 +17,8 @@ def evaluate_model_task():
     job_run_id = dbutils.jobs.taskValues.get(taskKey="train_model", key="job_run_id", debugValue="")  # type: ignore # noqa: F821
     model_uri = dbutils.jobs.taskValues.get(taskKey="train_model", key="model_uri", debugValue="")  # type: ignore # noqa: F821
 
-    mlflow.set_registry_uri("databricks-uc")
     mlflow.set_tracking_uri("databricks")
+    mlflow.set_registry_uri("databricks-uc")
 
     git_branch, git_sha = check_repo_info(
         f"/Workspace/{config.user_dir_path}/{config.git_repo}",
@@ -28,7 +28,7 @@ def evaluate_model_task():
     mlflow_client = mlflow.tracking.MlflowClient()
     current_model_run_id = mlflow_client.search_model_versions(
         f"name='{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic'"
-    )
+    )[0].run_id
     new_run_id = re.search(r"runs:/([^/]+)/", model_uri).group(1)
 
     current_model_mae = mlflow.search_runs(
