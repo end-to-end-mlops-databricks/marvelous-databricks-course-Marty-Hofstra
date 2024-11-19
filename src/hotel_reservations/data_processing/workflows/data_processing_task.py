@@ -61,14 +61,17 @@ def preprocessing():
         refreshed = True
 
         train, test = data_preprocessor.split_data()
-
-        train.write.format("delta").mode("overwrite").saveAsTable(
-            f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
-        )
-        test.write.format("delta").mode("overwrite").saveAsTable(
-            f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data"
-        )
-        print("The train and test data is created for the first time")
+        try:
+            train.write.format("delta").mode("overwrite").saveAsTable(
+                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data"
+            )
+            test.write.format("delta").mode("overwrite").saveAsTable(
+                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data"
+            )
+            print("The train and test data is created for the first time")
+        except (AnalysisException, StreamingQueryException) as e:
+            print(f"Error creating Delta tables: {str(e)}")
+            raise
 
     dbutils.jobs.taskValues.set(key="refreshed", value=refreshed)  # type: ignore # noqa: F821
 
