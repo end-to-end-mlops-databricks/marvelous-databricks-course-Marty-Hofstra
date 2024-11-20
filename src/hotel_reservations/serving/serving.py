@@ -68,6 +68,10 @@ class Serving:
             is 0.. Defaults to "Small".
         """
         try:
+            self.workspace.serving_endpoints.get(self.serving_endpoint_name)
+            logging.info(f"Serving endpoint {self.serving_endpoint_name} already exists. Skipping creation.")
+        except Exception as e:
+            print(f"{e} Creating the serving endpoint {self.serving_endpoint_name}")
             self.workspace.serving_endpoints.create(
                 name=self.serving_endpoint_name,
                 config=EndpointCoreConfigInput(
@@ -80,9 +84,6 @@ class Serving:
                     ]
                 ),
             )
-        except Exception as e:
-            logging.error(f"Failed to create serving endpoint '{self.serving_endpoint_name}': {e}")
-            raise
 
     def send_request(self, pk_value: str) -> tuple[int, str, float]:
         """Sends a request to the endpoint with the primary key value as input

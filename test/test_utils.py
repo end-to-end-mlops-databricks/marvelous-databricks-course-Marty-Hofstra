@@ -1,17 +1,23 @@
 import json
 from unittest.mock import Mock, mock_open, patch
 
+import pandas as pd
 import pytest
 import requests
 import yaml
+from pyspark.sql.functions import col
 
-from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
+from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
 from hotel_reservations.utils import (
     check_repo_info,
+    generate_booking_ids_regex,
+    generate_synthetic_data,
     get_error_metrics,
     open_config,
 )
 from test.utils import spark_session
+
+spark = spark_session
 
 mock_config: dict = {
     "catalog": "my_catalog",
@@ -34,6 +40,7 @@ mock_config: dict = {
         # Add other categorical features similarly
     },
     "target": "booking_status",
+    "primary_key": "Booking_ID",
 }
 
 
@@ -174,3 +181,176 @@ def test_check_repo_info_rate_limit():
     with patch("requests.get", side_effect=mock_response.json.side_effect):
         with pytest.raises(requests.exceptions.HTTPError, match="429 Client Error"):
             check_repo_info(repo_path, dbutils=mock_dbutils)
+
+
+def test_generate_booking_ids_regex_basic():
+    existing_ids = ["INN1205", "INN1207"]
+    num_new_ids = 3
+    prefix = "INN"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+    # Expected new IDs based on the given input
+    expected = ["INN1208", "INN1209", "INN1210"]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_generate_booking_ids_regex_custom_prefix():
+    existing_ids = ["BOOK1001", "BOOK1002"]
+    num_new_ids = 2
+    prefix = "BOOK"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+    expected = ["BOOK1003", "BOOK1004"]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_generate_booking_ids_regex_empty_existing_ids():
+    existing_ids = []
+    num_new_ids = 3
+    prefix = "INN"
+
+    # Should handle empty input gracefully
+    with pytest.raises(ValueError):
+        generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+
+def test_generate_booking_ids_regex_large_range():
+    existing_ids = ["INN99998", "INN99999"]
+    num_new_ids = 3
+    prefix = "INN"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+    expected = ["INN100000", "INN100001", "INN100002"]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_generate_booking_ids_regex_no_new_ids():
+    existing_ids = ["INN01205", "INN01207"]
+    num_new_ids = 0
+    prefix = "INN"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+    expected = []  # No new IDs generated
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_generate_booking_ids_regex_variable_padding():
+    # Existing IDs with variable padding lengths
+    existing_ids = ["INN001", "INN099", "INN100"]
+    num_new_ids = 3
+    prefix = "INN"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+    # Padding length should dynamically adjust to 3 (matching 'INN100')
+    expected = ["INN101", "INN102", "INN103"]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+def test_generate_booking_ids_regex_mixed_prefix_lengths():
+    # Mixed prefix lengths to ensure function handles prefixes properly
+    existing_ids = ["BOOK1", "BOOK12", "BOOK99"]
+    num_new_ids = 3
+    prefix = "BOOK"
+
+    result = generate_booking_ids_regex(existing_ids, num_new_ids, prefix)
+
+    # Padding length should adjust to 2 (matching 'BOOK99')
+    expected = ["BOOK100", "BOOK101", "BOOK102"]
+    assert result == expected, f"Expected {expected}, but got {result}"
+
+
+mock_project_config = ProjectConfig(
+    catalog="my_catalog",
+    schema="my_schema",
+    use_case_name="hotel_reservations",
+    user_dir_path="/Users/user/",
+    git_repo="git_repo",
+    volume_whl_path="Volumes/users/user/packages/",
+    parameters={"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
+    num_features={
+        "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
+        "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
+    },
+    cat_features={
+        "type_of_meal_plan": CatFeature(
+            type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
+        ),
+        "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
+    },
+    target="booking_status",
+    primary_key="Booking_ID",
+)
+
+
+@pytest.fixture
+def mock_input_data(spark):
+    data = {
+        "no_of_adults": [1, 2, 3],
+        "avg_price_per_room": [100.0, 200.0, 150.0],
+        "type_of_meal_plan": ["Meal Plan 1", "Meal Plan 2", "Meal Plan 3"],
+        "required_car_parking_space": [1, 0, 1],
+        "booking_id": ["INN001", "INN002", "INN003"],
+    }
+    return spark.createDataFrame(pd.DataFrame(data))
+
+
+def test_generate_synthetic_data_numerical_constraints(mock_input_data, spark):
+    num_rows = 100
+
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
+
+    # Verify number of rows
+    assert synthetic_data.count() == num_rows
+
+    # Check numerical constraints
+    num_features = mock_project_config.num_features
+    for col_name, feature in num_features.items():
+        min_value = feature.constraints.min
+        assert synthetic_data.filter(col(col_name) < min_value).count() == 0
+
+
+def test_generate_synthetic_data_categorical_values(mock_input_data, spark):
+    num_rows = 100
+
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
+
+    # Verify categorical features
+    cat_features = mock_project_config.cat_features
+    for col_name, feature in cat_features.items():
+        allowed_values = feature.allowed_values if feature.encoding is None else feature.encoding
+        values = synthetic_data.select(col_name).distinct().rdd.flatMap(lambda x: x).collect()
+        assert all(value in allowed_values for value in values)
+
+
+def test_generate_synthetic_data_primary_keys(mock_input_data, spark):
+    num_rows = 100
+
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
+
+    # Verify primary keys are unique
+    ids = synthetic_data.select(mock_project_config.primary_key).rdd.flatMap(lambda x: x).collect()
+    assert len(ids) == len(set(ids))
+
+
+def test_generate_synthetic_data_target_variable(mock_input_data, spark):
+    num_rows = 100
+
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
+
+    # Verify target variable values
+    target_values = ["Not_Canceled", "Canceled"]
+    values = synthetic_data.select(mock_project_config.target).distinct().rdd.flatMap(lambda x: x).collect()
+    assert all(value in target_values for value in values)
+
+
+def test_generate_synthetic_data(mock_input_data, spark):
+    # Generate synthetic data with a large number of rows
+    num_rows = 150000
+    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows=num_rows)
+
+    # Assert the number of rows is capped at 100,000
+    assert synthetic_data.count() == 100000

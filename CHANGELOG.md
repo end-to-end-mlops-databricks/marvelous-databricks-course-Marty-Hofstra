@@ -4,6 +4,20 @@ All notable changes to the `hotel_reservations` project will be documented in th
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.0] - 2024-11-18
+
+### Added
+- Deployment with DAB
+- Util functions for the creation of synthetic data (to simulate data ingestion)
+- Added the primary key to the projectConfig Pydantic, for addition to the project config yaml file
+- Model evaluation task
+- Deploy new predictions (as features) task
+### Changed
+- Moved the creation of ML pipeline preprocessing stages to a model class
+
+
+### Fixed
+
 ## [0.1.0] - 2024-11-10
 
 ### Added

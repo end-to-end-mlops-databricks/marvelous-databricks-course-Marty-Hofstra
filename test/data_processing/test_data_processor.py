@@ -2,8 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
-from pyspark.testing import assertDataFrameEqual
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
@@ -11,6 +9,7 @@ from test.utils import spark_session
 
 spark = spark_session
 
+# Define the mock config object
 mock_config = ProjectConfig(
     catalog="my_catalog",
     schema="my_schema",
@@ -30,9 +29,11 @@ mock_config = ProjectConfig(
         "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
     },
     target="booking_status",
+    primary_key="Booking_ID",
 )
 
 
+# Mock DataFrame fixture
 @pytest.fixture
 def mock_dataframe(spark: SparkSession):
     data = [
@@ -62,23 +63,23 @@ def mock_dataframe(spark: SparkSession):
 
 
 # Test case for the __init__ and load function
-@patch.object(DataProcessor, "read_UC_spark")
-def test_data_processor_init(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
-    mock_read_UC_spark.return_value = mock_dataframe
+@patch.object(SparkSession, "read")
+def test_data_processor_init(mock_read, mock_dataframe, spark: SparkSession):
+    mock_read.table.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config, spark)
 
-    mock_read_UC_spark.assert_called_once_with(
-        mock_config.catalog, mock_config.db_schema, mock_config.use_case_name, spark
+    mock_read.table.assert_called_once_with(
+        f"{mock_config.catalog}.{mock_config.db_schema}.{mock_config.use_case_name}"
     )
 
     assert processor.df == mock_dataframe
 
 
 # Test the split_data function
-@patch.object(DataProcessor, "read_UC_spark")
-def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
-    mock_read_UC_spark.return_value = mock_dataframe
+@patch.object(SparkSession, "read")
+def test_split_data(mock_read, mock_dataframe, spark: SparkSession):
+    mock_read.table.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config, spark)
     train, test = processor.split_data(test_size=0.5, random_state=42)
@@ -96,9 +97,9 @@ def test_split_data(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
     assert train.count() + test.count() == total_rows
 
 
-@patch.object(DataProcessor, "read_UC_spark")
-def test_split_data_value_error_test_size_low(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
-    mock_read_UC_spark.return_value = mock_dataframe
+@patch.object(SparkSession, "read")
+def test_split_data_value_error_test_size_low(mock_read, mock_dataframe, spark: SparkSession):
+    mock_read.table.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config, spark)
 
@@ -106,9 +107,9 @@ def test_split_data_value_error_test_size_low(mock_read_UC_spark, mock_dataframe
         processor.split_data(test_size=0)
 
 
-@patch.object(DataProcessor, "read_UC_spark")
-def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_dataframe, spark: SparkSession):
-    mock_read_UC_spark.return_value = mock_dataframe
+@patch.object(SparkSession, "read")
+def test_split_data_value_error_test_size_high(mock_read, mock_dataframe, spark: SparkSession):
+    mock_read.table.return_value = mock_dataframe
 
     processor = DataProcessor(mock_config, spark)
 
@@ -116,8 +117,8 @@ def test_split_data_value_error_test_size_high(mock_read_UC_spark, mock_datafram
         processor.split_data(test_size=1.5)
 
 
-@patch.object(DataProcessor, "read_UC_spark")
-def test_data_after_dropping1(mock_read_UC_spark, spark_session: SparkSession):
+@patch.object(SparkSession, "read")
+def test_split_data_missing_target(mock_read, spark):
     data_missing_target = [
         {
             "no_of_adults": 25,
@@ -131,7 +132,7 @@ def test_data_after_dropping1(mock_read_UC_spark, spark_session: SparkSession):
             "avg_price_per_room": 60000,
             "type_of_meal_plan": "Meal Plan 2",
             "required_car_parking_space": False,
-            "booking_status": None,
+            "booking_status": "",
         },
     ]
     data_non_missing_target = [
@@ -140,83 +141,26 @@ def test_data_after_dropping1(mock_read_UC_spark, spark_session: SparkSession):
             "avg_price_per_room": 50000,
             "type_of_meal_plan": "Meal Plan 1",
             "required_car_parking_space": True,
-            "booking_status": 1,
+            "booking_status": "Canceled",
         },
         {
             "no_of_adults": 30,
             "avg_price_per_room": 60000,
             "type_of_meal_plan": "Meal Plan 2",
             "required_car_parking_space": False,
-            "booking_status": 0,
+            "booking_status": "Not_Canceled",
         },
     ]
 
     mock_data = data_missing_target + data_non_missing_target
-    sparse_df = spark_session.createDataFrame(mock_data)
-    mock_read_UC_spark.return_value = sparse_df
+    sparse_df = spark.createDataFrame(mock_data)
+    mock_read.table.return_value = sparse_df
 
+    # Create DataProcessor instance
     processor = DataProcessor(mock_config, spark)
-    processor.preprocess_data()
 
-    expected = spark_session.createDataFrame(data_non_missing_target)
+    # Call the split_data function
+    train_data, test_data = processor.split_data()
 
-    assert processor.df.count() == len(data_non_missing_target), "Should only keep rows with non-null target"
-
-    assertDataFrameEqual(processor.df, expected)
-
-    assert processor.df.filter(col("booking_status").isNull()).count() == 0, "Should not have null values in target"
-
-
-@patch.object(DataProcessor, "read_UC_spark")
-def test_data_after_dropping(mock_read_UC_spark, spark_session: SparkSession):
-    null_data_variations = [
-        {
-            "no_of_adults": None,
-            "avg_price_per_room": None,  # Multiple null values
-            "type_of_meal_plan": "Meal Plan 1",
-            "required_car_parking_space": True,
-            "booking_status": 1,
-        },
-        {
-            "no_of_adults": 30,
-            "avg_price_per_room": 60000,
-            "type_of_meal_plan": None,  # Null categorical
-            "required_car_parking_space": False,
-            "booking_status": 0,
-        },
-    ]
-
-    data_non_missing_target = [
-        {
-            "no_of_adults": None,
-            "avg_price_per_room": 50000,
-            "type_of_meal_plan": "Meal Plan 1",
-            "required_car_parking_space": True,
-            "booking_status": 1,
-        },
-        {
-            "no_of_adults": 30,
-            "avg_price_per_room": 60000,
-            "type_of_meal_plan": "Meal Plan 2",
-            "required_car_parking_space": False,
-            "booking_status": 0,
-        },
-    ]
-
-    sparse_df = spark_session.createDataFrame(null_data_variations)
-    mock_read_UC_spark.return_value = sparse_df
-
-    processor = DataProcessor(mock_config, spark)
-    processor.preprocess_data()
-
-    expected = spark_session.createDataFrame(data_non_missing_target)
-
-    # Additional assertions
-    expected_schema = expected.schema
-    assert processor.df.schema == expected_schema, "Schema should match after preprocessing"
-
-    # Verify non-target null handling
-    null_counts = {
-        field.name: processor.df.filter(col(field.name).isNull()).count() for field in processor.df.schema.fields
-    }
-    assert null_counts["booking_status"] == 0, "Target should not have nulls"
+    # Check that the train_data contains only valid rows (non-null and non-empty target)
+    assert train_data.count() == len(data_non_missing_target)

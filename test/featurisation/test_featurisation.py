@@ -30,6 +30,7 @@ def config():
             "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
         },
         target="booking_status",
+        primary_key="Booking_ID",
     )
 
 

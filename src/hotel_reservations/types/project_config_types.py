@@ -45,6 +45,7 @@ class ProjectConfig(BaseModel):
     - `num_features`: Numerical features with details on type and constraints.
     - `cat_features`: Categorical features with details on type, allowed values, and constraints.
     - `target`: The target variable for model training (e.g., booking status).
+    - `primary_key`: The priamry key in the input data, this is used for the registration of the data in the feature table
     """
 
     catalog: str
@@ -57,3 +58,4 @@ class ProjectConfig(BaseModel):
     num_features: Dict[str, NumFeature]
     cat_features: Dict[str, CatFeature]
     target: str
+    primary_key: str

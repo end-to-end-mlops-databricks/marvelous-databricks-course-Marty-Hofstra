@@ -14,6 +14,7 @@ In order to set your venv, run `make init` in the terminal. UV is used as Python
 Note: It might occur that after `make init extra=test`, the PySpark version patched from DBconnect is still used, this makes the unit tests fail because it requires a remote Spark session. If this happens, run `pip uninstall pyspark` and `pip uninstall pyspark==3.5.0`.
 
 ### Databricks
+#### Setup
 Install the Databricks extension in Visual Studio Code and follow the steps visible in the extension. Run `databricks auth login - configure-cluster - host <workspace-url>` in the terminal, this should create a `databrickscfg` file that looks as follows:
 ```
 [DEFAULT]
@@ -22,6 +23,13 @@ auth_type = databricks-cli
 cluster_id = <CLUSTER_ID>
 ```
 Note: the DBR has to be 15.4 or higher, otherwise it will conflict with the `databricks-connect version`.
+
+#### Deployment
+For deployment to Databricks, Databricks Assent Bundles are used. In order to validate changes in the `databricks.yml` file, you can run `databricks bundle validate --var="cluster_policy_id={cluster_policy_id}"`, where `{cluster_policy_id}` is the policy id of the cluster for multi-node in your Databricks workspace. It is not hardcoded in the yml file because it is semi-secret.
+
+After validation, you can deploy the resources to Databricks by running `databricks bundle deploy --var="cluster_policy_id={cluster_policy_id}"`. Running the jobs from the CLI is also possible by `databricks bundle run`.
+
+Destroying jobs is done with `databricks bundle destroy`, keep in mind that this destroys ALL resources in the `databricks.yml file`.
 
 ### Package
 #### Creation

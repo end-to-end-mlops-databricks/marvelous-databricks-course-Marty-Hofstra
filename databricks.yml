@@ -5,15 +5,96 @@
 bundle:
   name: marvelous-databricks-course-Marty-Hofstra
 
+artifacts:
+  default:
+    type: whl
+    build: python -m build
+    path: .
+
+variables:
+  schedule_pause_status:
+    description: schedule pause status
+    default: UNPAUSED
+  cluster_policy_id:
+    description: Policy ID of the multi node cluster
+    default: "default"
+
+resources:
+  jobs:
+    hotel-reservations:
+      name: hotel-reservations-demo
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON"
+        timezone_id: "Europe/Amsterdam"
+        pause_status: ${var.schedule_pause_status}
+      tags:
+        project_name: "hotel-reservation"
+      job_clusters:
+        - job_cluster_key: "hotel-reservation-cluster"
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            data_security_mode: "SINGLE_USER"
+            node_type_id: "Standard_D4ds_v4"
+            driver_node_type_id: "Standard_D4ds_v4"
+            autoscale:
+              min_workers: 2
+              max_workers: 4
+            policy_id: ${var.cluster_policy_id}
+            azure_attributes:
+              availability: SPOT_WITH_FALLBACK_AZURE
+      tasks:
+          - task_key: "preprocessing"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/data_processing/workflows/data_processing_task.py"
+            libraries:
+            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+          - task_key: if_refreshed
+            condition_task:
+              op: "EQUAL_TO"
+              left: "{{tasks.preprocessing.values.refreshed}}"
+              right: "true"
+            depends_on:
+              - task_key: "preprocessing"
+          - task_key: "train_model"
+            depends_on:
+              - task_key: "if_refreshed"
+                outcome: "true"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/models/workflows/train_model_task.py"
+              parameters:
+                - "--job_run_id"
+                - "{{job.id}}"
+            libraries:
+              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+          - task_key: "evaluate_model"
+            depends_on:
+              - task_key: "train_model"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/models/workflows/evaluate_model_task.py"
+            libraries:
+              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+          - task_key: model_update
+            condition_task:
+              op: "EQUAL_TO"
+              left: "{{tasks.evaluate_model.values.model_update}}"
+              right: "1"
+            depends_on:
+              - task_key: "evaluate_model"
+          - task_key: "deploy_new_model_predictions"
+            depends_on:
+              - task_key: "model_update"
+                outcome: "true"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/serving/workflows/deploy_new_model_predictions.py"
+            libraries:
+              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
 targets:
   dev:
     mode: development
     default: true
     workspace:
       host: https://adb-4802833999154755.15.azuredatabricks.net
-
-  ## Optionally, there could be 'staging' or 'prod' targets here.
-  #
-  # prod:
-  #   workspace:
-  #     host: https://adb-4802833999154755.15.azuredatabricks.net
