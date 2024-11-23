@@ -17,7 +17,7 @@ config = open_config("../project_config.yaml", scope="marty-MLOPs-cohort")
 # 2. Comparing against a configured threshold
 # 3. Returns 1 if drift detected, 0 otherwise
 # 
-alert_query = """
+alert_query = f"""
 SELECT FIRST(CASE WHEN percentage > 50.0 THEN 1 ELSE 0 END) AS prediction_drift FROM(
 SELECT avg, lead(avg, 1) OVER(ORDER BY window DESC) AS lead_avg_prediction, ROUND((avg - lead(avg, 1) OVER(ORDER BY window DESC))* 100.0 / lead(avg, 1) OVER(ORDER BY window DESC), 1) AS percentage, window from {config.catalog}.{config.schema}.{config.use_case_name}_preds_profile_metrics
 where column_name = 'prediction'
