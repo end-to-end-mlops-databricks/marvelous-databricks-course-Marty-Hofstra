@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Monitoring class
 - Added drift option for generation of synthetic data
--
+- Predict and monitoring task
 
 ### Changed
 - `generate_synthetic_data` function fully in PySpark, as opposed to switching back and forth to Pandas
-
+- The preprocessor class now has a drift option
+- The preprocessor task now has a drift option that is assigned as task parameter in the job config
 
 ### Fixed
 

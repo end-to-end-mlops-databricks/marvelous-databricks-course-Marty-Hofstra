@@ -6,7 +6,7 @@ from hotel_reservations.monitoring.monitoring import Monitoring
 from hotel_reservations.utils import open_config
 
 
-def monitoring():
+def predict_monitor():
     spark = SparkSession.builder.getOrCreate()
     mlflow.set_registry_uri("databricks-uc")
     mlflow_client = mlflow.tracking.MlflowClient()
@@ -64,7 +64,7 @@ def monitoring():
             )
             full_df_skewed = train_data_skewed.unionByName(test_data_skewed)
 
-            full_df_skewed.cache()  # This was required due to issues with predicting on this df
+            full_df_skewed.cache()  # This was required due to performance issues with predicting on this df
             full_df_skewed.count()  # Materialize the cache
 
             predictions_df_skewed = full_df_skewed.withColumn("prediction", predict(*full_df_skewed.columns)).select(
@@ -81,3 +81,7 @@ def monitoring():
 
     except Exception as e:
         print(f"The main pipeline has not run yet on this workspace: {str(e)}")
+
+
+if __name__ == "__main__":
+    predict_monitor()
