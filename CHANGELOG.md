@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.3.0] - 2024-11-23
 
 ### Added
-- Monitoring class, with creation of a Snapshot Lakehouse data monitor
-- Added drift option for generation of synthetic data
-- Predict and monitoring task
+- Implemented Snapshot monitoring class for predictions table to track data drift
+- Added drift simulation capability to synthetic data generation
+- Added new hotel-reservations-monitoring job with predict and monitor tasks
 
 ### Changed
 - `generate_synthetic_data` function fully in PySpark, as opposed to switching back and forth to Pandas
