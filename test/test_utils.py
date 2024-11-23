@@ -6,6 +6,9 @@ import pytest
 import requests
 import yaml
 from pyspark.sql.functions import col
+from pyspark.sql.functions import max as spark_max
+from pyspark.sql.functions import min as spark_min
+from pyspark.sql.types import DoubleType, IntegerType
 
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
 from hotel_reservations.utils import (
@@ -278,6 +281,7 @@ def mock_input_data(spark):
 
 def test_generate_synthetic_data_basic(mock_input_data):
     synthetic_data = generate_synthetic_data(mock_input_data, num_rows=50)
+
     assert synthetic_data.count() == 50
     expected_columns = [
         "Booking_ID",
@@ -301,6 +305,15 @@ def test_generate_synthetic_data_basic(mock_input_data):
         "booking_status",
     ]
     assert set(synthetic_data.columns) == set(expected_columns)
+    assert synthetic_data.schema["no_of_adults"].dataType == IntegerType()
+    assert synthetic_data.schema["avg_price_per_room"].dataType == DoubleType()
+
+    # Add value range validation
+    adults_stats = synthetic_data.select(
+        spark_min("no_of_adults").alias("min"), spark_max("no_of_adults").alias("max")
+    ).collect()[0]
+    assert adults_stats.min >= 1, "no_of_adults should be at least 1"
+    assert adults_stats.max <= 10, "no_of_adults should not exceed 10"
 
 
 def test_generate_synthetic_data_num_rows_cap(mock_input_data):

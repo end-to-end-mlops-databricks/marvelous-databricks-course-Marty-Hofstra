@@ -51,31 +51,31 @@ def monitoring(mock_workspace_client):
 # Unit Tests
 def test_create_lakehouse_monitor_exists(monitoring, mock_workspace_client):
     """
-    Test the create_lakehouse_monitor method when the monitor already exists.
+    Test create_lakehouse_monitor when the monitor already exists.
     """
-    # Mock the behavior of the quality_monitors.get method to simulate an existing monitor
+    # Mock behavior of quality_monitors.get to simulate an existing monitor
     mock_workspace_client.quality_monitors.get = MagicMock()
 
     # Execute the method
     monitoring.create_lakehouse_monitor()
 
-    # Assert that get was called and create was not called
+    # Assertions
     mock_workspace_client.quality_monitors.get.assert_called_once_with("test_table")
     mock_workspace_client.quality_monitors.create.assert_not_called()
 
 
 def test_create_lakehouse_monitor_create_new(monitoring, mock_workspace_client):
     """
-    Test the create_lakehouse_monitor method when the monitor does not exist.
+    Test create_lakehouse_monitor when the monitor does not exist.
     """
-    # Mock the behavior of the quality_monitors.get method to raise an exception
+    # Mock behavior of quality_monitors.get to raise an exception
     mock_workspace_client.quality_monitors.get = MagicMock(side_effect=Exception("Monitor does not exist"))
     mock_workspace_client.quality_monitors.create = MagicMock()
 
     # Execute the method
     monitoring.create_lakehouse_monitor()
 
-    # Assert that get was called and create was called with the correct parameters
+    # Assertions
     mock_workspace_client.quality_monitors.get.assert_called_once_with("test_table")
     mock_workspace_client.quality_monitors.create.assert_called_once_with(
         table_name="test_table",
@@ -87,13 +87,25 @@ def test_create_lakehouse_monitor_create_new(monitoring, mock_workspace_client):
 
 def test_refresh_monitor(monitoring, mock_workspace_client):
     """
-    Test the refresh_monitor method.
+    Test refresh_monitor.
     """
-    # Mock the behavior of the quality_monitors.run_refresh method
+    # Mock behavior of quality_monitors.run_refresh
     mock_workspace_client.quality_monitors.run_refresh = MagicMock()
 
     # Execute the method
     monitoring.refresh_monitor()
 
-    # Assert that run_refresh was called with the correct parameters
+    # Assertions
     mock_workspace_client.quality_monitors.run_refresh.assert_called_once_with(table_name="test_table")
+
+
+def test_refresh_monitor_failure(monitoring, mock_workspace_client):
+    """
+    Test refresh_monitor handles RuntimeError on failure.
+    """
+    # Mock behavior to raise an exception
+    mock_workspace_client.quality_monitors.run_refresh = MagicMock(side_effect=Exception("Refresh failed"))
+
+    # Execute and verify exception is raised
+    with pytest.raises(RuntimeError, match="Failed to refresh monitor: Refresh failed"):
+        monitoring.refresh_monitor()

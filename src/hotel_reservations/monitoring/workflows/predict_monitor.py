@@ -64,6 +64,9 @@ def monitoring():
             )
             full_df_skewed = train_data_skewed.unionByName(test_data_skewed)
 
+            full_df_skewed.cache()  # This was required due to issues with predicting on this df
+            full_df_skewed.count()  # Materialize the cache
+
             predictions_df_skewed = full_df_skewed.withColumn("prediction", predict(*full_df_skewed.columns)).select(
                 "prediction", *columns_to_serve
             )

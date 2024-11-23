@@ -4,6 +4,19 @@ All notable changes to the `hotel_reservations` project will be documented in th
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.0] - 2024-11-23
+
+### Added
+- Monitoring class
+- Added drift option for generation of synthetic data
+-
+
+### Changed
+- `generate_synthetic_data` function fully in PySpark, as opposed to switching back and forth to Pandas
+
+
+### Fixed
+
 ## [0.2.0] - 2024-11-18
 
 ### Added

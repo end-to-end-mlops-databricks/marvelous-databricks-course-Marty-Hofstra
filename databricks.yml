@@ -51,7 +51,7 @@ resources:
                 - "--simulate_drift"
                 - "False"
             libraries:
-            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: if_refreshed
             condition_task:
               op: "EQUAL_TO"
@@ -70,7 +70,7 @@ resources:
                 - "--job_run_id"
                 - "{{job.id}}"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: "evaluate_model"
             depends_on:
               - task_key: "train_model"
@@ -78,7 +78,7 @@ resources:
             spark_python_task:
               python_file: "src/hotel_reservations/models/workflows/evaluate_model_task.py"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: model_update
             condition_task:
               op: "EQUAL_TO"
@@ -94,7 +94,7 @@ resources:
             spark_python_task:
               python_file: "src/hotel_reservations/serving/workflows/deploy_new_model_predictions.py"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
     hotel-reservations-monitoring:
       name: hotel-reservations-monitoring
       schedule:
@@ -125,7 +125,7 @@ resources:
                 - "--simulate_drift"
                 - "False"
             libraries:
-            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: "preprocessing_drift"
             job_cluster_key: "hotel-reservation-cluster"
             spark_python_task:
@@ -134,13 +134,13 @@ resources:
                 - "--simulate_drift"
                 - "True"
             libraries:
-            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: predict_monitor
             job_cluster_key: "hotel-reservation-cluster"
             spark_python_task:
               python_file: "src/hotel_reservations/monitoring/workflows/predict_monitor.py"
             libraries:
-            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
             depends_on:
               - task_key: "preprocessing"
               - task_key: "preprocessing_drift"
