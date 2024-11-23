@@ -1,9 +1,15 @@
+import logging
+
 import mlflow
+from mlflow.exceptions import MlflowException
 from pyspark.sql import SparkSession
+from pyspark.sql.utils import AnalysisException
 
 from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.monitoring.monitoring import Monitoring
 from hotel_reservations.utils import open_config
+
+logger = logging.getLogger(__name__)
 
 
 def predict_monitor():
@@ -56,13 +62,15 @@ def predict_monitor():
             )
 
         if is_refreshed_drift:
+            n_partitions = int(spark.conf.get("spark.sql.shuffle.partitions"))
+
             train_data_skewed = spark.read.table(
                 f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data_skewed"
             )
             test_data_skewed = spark.read.table(
                 f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data_skewed"
             )
-            full_df_skewed = train_data_skewed.unionByName(test_data_skewed)
+            full_df_skewed = train_data_skewed.unionByName(test_data_skewed).repartition(n_partitions)
 
             full_df_skewed.cache()  # This was required due to performance issues with predicting on this df
             full_df_skewed.count()  # Materialize the cache
@@ -79,8 +87,15 @@ def predict_monitor():
                 "No new drift data has been ingested and thus no prediction and refreshing of the data monitor are required"
             )
 
+    except MlflowException as e:
+        logger.error(f"MLflow error: {str(e)}")
+        raise
+    except AnalysisException as e:
+        logger.error(f"Spark analysis error: {str(e)}")
+        raise
     except Exception as e:
-        print(f"The main pipeline has not run yet on this workspace: {str(e)}")
+        logger.error(f"Unexpected error in predict_monitor: {str(e)}")
+        raise
 
 
 if __name__ == "__main__":
