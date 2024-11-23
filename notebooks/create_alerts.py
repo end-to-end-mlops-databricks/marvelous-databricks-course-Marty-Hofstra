@@ -12,12 +12,12 @@ w = WorkspaceClient()
 config = open_config("../project_config.yaml", scope="marty-MLOPs-cohort")
 
 # COMMAND ----------
+# This query detects prediction drift by:
+# 1. Calculating the percentage difference between current and previous average predictions
+# 2. Comparing against a configured threshold
+# 3. Returns 1 if drift detected, 0 otherwise
+# 
 alert_query = """
-/* This query detects prediction drift by:
- * 1. Calculating the percentage difference between current and previous average predictions
- * 2. Comparing against a configured threshold
- * 3. Returns 1 if drift detected, 0 otherwise
- */
 SELECT FIRST(CASE WHEN percentage > 50.0 THEN 1 ELSE 0 END) AS prediction_drift FROM(
 SELECT avg, lead(avg, 1) OVER(ORDER BY window DESC) AS lead_avg_prediction, ROUND((avg - lead(avg, 1) OVER(ORDER BY window DESC))* 100.0 / lead(avg, 1) OVER(ORDER BY window DESC), 1) AS percentage, window from {config.catalog}.{config.schema}.{config.use_case_name}_preds_profile_metrics
 where column_name = 'prediction'
