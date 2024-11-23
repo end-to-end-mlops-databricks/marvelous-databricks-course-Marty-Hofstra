@@ -4,7 +4,7 @@ import pytest
 
 from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
-from test.utils import spark_session
+from test.test_conf import spark_session
 
 spark = spark_session
 

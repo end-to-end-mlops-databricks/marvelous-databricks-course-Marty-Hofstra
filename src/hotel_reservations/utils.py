@@ -1,18 +1,23 @@
 import json
 import logging
 import os
+import random
 import re
 from typing import Any, Optional
 
-import numpy as np
-import pandas as pd
 import requests
 import yaml
 from databricks.sdk import WorkspaceClient
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import avg as mean
-from pyspark.sql.functions import stddev
+from pyspark.sql.functions import col, lit
+from pyspark.sql.types import (
+    DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from hotel_reservations.types.project_config_types import ProjectConfig
 
@@ -149,52 +154,82 @@ def generate_booking_ids_regex(existing_ids: list[str], num_new_ids=1000, prefix
 spark = SparkSession.builder.getOrCreate()
 
 
-def generate_synthetic_data(config: ProjectConfig, input_data: DataFrame, num_rows: int = 1000) -> DataFrame:
-    """Generates synthetic data in order to simulate data ingestion into the input data.
+def generate_synthetic_data(input_data: DataFrame, num_rows: int = 100, drift: bool = False) -> DataFrame:
+    """
+    Generates synthetic data using PySpark to simulate data ingestion.
 
     Args:
-        config (ProjectConfig): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
-        input_data (DataFrame): Current input DataFrame with real data
-        num_rows (int, optional): Number of rows to add to the existing input data. Defaults to 1000.
+        input_data (DataFrame): Current input DataFrame with real data.
+        num_rows (int, optional): Number of rows to generate. Defaults to 100.
+        drift (bool, optional): Simulates data drift. Defaults to False.
 
     Returns:
-        DataFrame: The added synthetic data, consisting of num_rows rows
+        DataFrame: Synthetic PySpark DataFrame with `num_rows` rows.
     """
     num_rows = min(num_rows, 100000)  # Cap the number of rows
-    synthetic_data = {}
 
-    # Loop through numerical features with constraints
-    num_features = {key: {"min": feature.constraints.min} for key, feature in config.num_features.items()}
-
-    # Loop through the columns and generate data based on constraints
-    for col_name, constraints in num_features.items():
-        mean_val, std_val = input_data.select(mean(col_name), stddev(col_name)).first()
-
-        # Generate data and apply constraints
-        synthetic_data[col_name] = np.round(np.random.normal(mean_val, std_val, num_rows))
-
-        # Apply min constraints
-        synthetic_data[col_name] = np.maximum(synthetic_data[col_name], constraints["min"])
-
-    # Loop through categorical features with allowed values
-    cat_features = {
-        key: [
-            int(value) if isinstance(value, str) and value.isdigit() else value
-            for value in feature.encoding or feature.allowed_values or []
+    # Hardcoded schema and features
+    schema = StructType(
+        [
+            StructField("Booking_ID", StringType(), True),
+            StructField("no_of_adults", IntegerType(), True),
+            StructField("no_of_children", IntegerType(), True),
+            StructField("no_of_weekend_nights", IntegerType(), True),
+            StructField("no_of_week_nights", IntegerType(), True),
+            StructField("type_of_meal_plan", StringType(), True),
+            StructField("required_car_parking_space", IntegerType(), True),
+            StructField("room_type_reserved", StringType(), True),
+            StructField("lead_time", IntegerType(), True),
+            StructField("arrival_year", IntegerType(), True),
+            StructField("arrival_month", IntegerType(), True),
+            StructField("arrival_date", IntegerType(), True),
+            StructField("market_segment_type", StringType(), True),
+            StructField("repeated_guest", IntegerType(), True),
+            StructField("no_of_previous_cancellations", IntegerType(), True),
+            StructField("no_of_previous_bookings_not_canceled", IntegerType(), True),
+            StructField("avg_price_per_room", DoubleType(), True),
+            StructField("no_of_special_requests", IntegerType(), True),
+            StructField("booking_status", StringType(), True),
         ]
-        for key, feature in config.cat_features.items()
-    }
-    for col_name, allowed_values in cat_features.items():
-        synthetic_data[col_name] = np.random.choice(allowed_values, num_rows)
+    )
 
-    # Create target variable (booking_status) as a random value
-    synthetic_data[config.target] = np.random.choice(["Not_Canceled", "Canceled"], num_rows, p=[0.9, 0.1])
-
-    existing_ids = input_data.select(config.primary_key).rdd.flatMap(lambda x: x).collect()
+    # Extract existing booking IDs
+    existing_ids = input_data.select("Booking_ID").rdd.flatMap(lambda x: x).collect()
     synthetic_ids = generate_booking_ids_regex(existing_ids, num_new_ids=num_rows)
-    synthetic_data[config.primary_key] = synthetic_ids
 
-    # Convert the synthetic data dictionary to a DataFrame
-    synthetic_df = spark.createDataFrame(pd.DataFrame(synthetic_data))
+    # Generate synthetic data
+    def generate_row(booking_id):
+        return {
+            "Booking_ID": booking_id,
+            "no_of_adults": random.randint(1, 4),
+            "no_of_children": random.randint(0, 3),
+            "no_of_weekend_nights": random.randint(0, 3),
+            "no_of_week_nights": random.randint(0, 7),
+            "type_of_meal_plan": random.choice(["Meal_Plan_1", "Meal_Plan_2", "Meal_Plan_3", "Not Selected"]),
+            "required_car_parking_space": random.randint(0, 1),
+            "room_type_reserved": random.choice(["Room_Type_1", "Room_Type_2", "Room_Type_3", "Room_Type_4"]),
+            "lead_time": random.randint(0, 365),
+            "arrival_year": 2024,
+            "arrival_month": random.randint(1, 12),
+            "arrival_date": random.randint(1, 28),
+            "market_segment_type": random.choice(["Online", "Corporate", "Offline"]),
+            "repeated_guest": random.randint(0, 1),
+            "no_of_previous_cancellations": random.randint(0, 2),
+            "no_of_previous_bookings_not_canceled": random.randint(0, 5),
+            "avg_price_per_room": round(random.uniform(50.0, 300.0), 2),
+            "no_of_special_requests": random.randint(0, 3),
+            "booking_status": random.choice(["Canceled", "Not_Canceled"]),
+        }
+
+    # Create synthetic rows
+    synthetic_rows = [generate_row(booking_id) for booking_id in synthetic_ids]
+
+    # Create synthetic DataFrame
+    synthetic_df = input_data.sparkSession.createDataFrame(synthetic_rows, schema)
+
+    if drift:
+        synthetic_df = synthetic_df.withColumn("avg_price_per_room", col("avg_price_per_room") * lit(1.5)).withColumn(
+            "no_of_week_nights", (col("no_of_week_nights") * lit(2)).cast("int")
+        )
 
     return synthetic_df
