@@ -32,7 +32,7 @@ def feature_serving():
 
     predict = mlflow.pyfunc.spark_udf(spark, f"runs:/{run_id_basic_model}/gbt-pipeline-model")
 
-    columns_to_serve = [config.primary_key, "avg_price_per_room", "no_of_week_nights"]
+    columns_to_serve = config.features_to_serve
 
     full_df = train_data.unionByName(test_data)
 

@@ -46,6 +46,7 @@ class ProjectConfig(BaseModel):
     - `cat_features`: Categorical features with details on type, allowed values, and constraints.
     - `target`: The target variable for model training (e.g., booking status).
     - `primary_key`: The priamry key in the input data, this is used for the registration of the data in the feature table
+    - `features_to_serve`: List of column names of features that are to be served to the Feature Serving endpoint.
     """
 
     catalog: str
@@ -59,3 +60,4 @@ class ProjectConfig(BaseModel):
     cat_features: Dict[str, CatFeature]
     target: str
     primary_key: str
+    features_to_serve: list[str]

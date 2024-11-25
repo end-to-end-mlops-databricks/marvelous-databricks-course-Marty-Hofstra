@@ -19,6 +19,8 @@ from pyspark.sql.types import (
     StructType,
 )
 
+from hotel_reservations.featurisation.featurisation import Featurisation
+from hotel_reservations.monitoring.monitoring import Monitoring
 from hotel_reservations.types.project_config_types import ProjectConfig
 
 
@@ -233,3 +235,37 @@ def generate_synthetic_data(input_data: DataFrame, num_rows: int = 100, drift: b
         )
 
     return synthetic_df
+
+
+def predict_refresh_monitor(
+    config: ProjectConfig, data_type: str, predict_function, monitoring_instance: Monitoring
+) -> None:
+    """Predicts based on either the 'normal' data or drifted data, writes the predictions & features_to_serve to a feature table
+       and refreshed the Lakehouse monitor if new predictions are written to the predictions table.
+       There were some performance issues with predicting on the skewed df, and thus a cache is done in case of the skewed df.
+    Args:
+        config (ProjectConfig): Project configuration file containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
+        data_type (str): Type of input data, can be either "normal" or "drift"
+        predict_function (function): Predict function, as loaded with MLFlow.
+        monitoring_instance (Monitoring): Instance of the monitoring class, as initialised in the workflow.
+    """
+    suffix = "_skewed" if data_type == "drift" else ""
+    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data{suffix}")
+    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data{suffix}")
+    full_df = train_data.unionByName(test_data)
+
+    if data_type == "drift":
+        full_df.cache()  # This was required due to performance issues with predicting on this df
+        full_df.count()  # Materialize the cache
+
+    predictions_df = full_df.withColumn("prediction", predict_function(*full_df.columns)).select(
+        "prediction", config.features_to_serve
+    )
+    featurisation_instance = Featurisation(config, predictions_df, "preds", config.primary_key)
+    featurisation_instance.write_feature_table(spark)
+
+    monitoring_instance.refresh_monitor()
+
+    print(
+        "New predictions, based on the {data_type} data have been written to the prediction table, and the Lakehouse monitor has been updated"
+    )

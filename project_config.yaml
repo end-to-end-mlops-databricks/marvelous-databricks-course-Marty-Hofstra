@@ -78,4 +78,6 @@ cat_features:
 
 target: booking_status
 
-primary_key: Booking_ID
+primary_key: &primary_key Booking_ID
+
+features_to_serve: [*primary_key, avg_price_per_room, no_of_week_nights]

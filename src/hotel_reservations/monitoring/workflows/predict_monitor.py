@@ -1,3 +1,9 @@
+"""This script creates a Lakehouse monitor (if is does not exist yet). A Snapshot monitor is created because batch predictions are done with Feature Serving.
+Consequently, predictions are done if the input data is refreshed, a distinction is made between 'normal' data and drifted data.
+After new predictions have been written to the predictions table, the monitor is refreshed.
+Due to performance issues with predictions on the drifted dataset, a cache was required.
+"""
+
 import logging
 
 import mlflow
@@ -5,9 +11,8 @@ from mlflow.exceptions import MlflowException
 from pyspark.sql import SparkSession
 from pyspark.sql.utils import AnalysisException
 
-from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.monitoring.monitoring import Monitoring
-from hotel_reservations.utils import open_config
+from hotel_reservations.utils import open_config, predict_refresh_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +41,6 @@ def predict_monitor():
             spark,
             f"models:/{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic/{current_model_version}",
         )
-        columns_to_serve = [config.primary_key, "avg_price_per_room", "no_of_week_nights"]
 
         predictions_table_name = f"{config.catalog}.{config.db_schema}.{config.use_case_name}_preds"
 
@@ -45,43 +49,18 @@ def predict_monitor():
         monitoring_instance.create_lakehouse_monitor()
 
         if is_refreshed:
-            train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data")
-            test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data")
-            full_df = train_data.unionByName(test_data)
-
-            predictions_df = full_df.withColumn("prediction", predict(*full_df.columns)).select(
-                "prediction", *columns_to_serve
+            predict_refresh_monitor(
+                config, data_type="normal", predict_function=predict, monitoring_instance=monitoring_instance
             )
-            featurisation_instance = Featurisation(config, predictions_df, "preds", config.primary_key)
-            featurisation_instance.write_feature_table(spark)
-
-            monitoring_instance.refresh_monitor()
         else:
             print(
                 "No new input data has been ingested and thus no prediction and refreshing of the data monitor are required"
             )
 
         if is_refreshed_drift:
-            n_partitions = int(spark.conf.get("spark.sql.shuffle.partitions"))
-
-            train_data_skewed = spark.read.table(
-                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data_skewed"
+            predict_refresh_monitor(
+                config, data_type="drift", predict_function=predict, monitoring_instance=monitoring_instance
             )
-            test_data_skewed = spark.read.table(
-                f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data_skewed"
-            )
-            full_df_skewed = train_data_skewed.unionByName(test_data_skewed).repartition(n_partitions)
-
-            full_df_skewed.cache()  # This was required due to performance issues with predicting on this df
-            full_df_skewed.count()  # Materialize the cache
-
-            predictions_df_skewed = full_df_skewed.withColumn("prediction", predict(*full_df_skewed.columns)).select(
-                "prediction", *columns_to_serve
-            )
-            featurisation_instance_skewed = Featurisation(config, predictions_df_skewed, "preds", config.primary_key)
-            featurisation_instance_skewed.write_feature_table(spark)
-
-            monitoring_instance.refresh_monitor()
         else:
             print(
                 "No new drift data has been ingested and thus no prediction and refreshing of the data monitor are required"

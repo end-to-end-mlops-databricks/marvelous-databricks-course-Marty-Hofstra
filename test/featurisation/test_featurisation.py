@@ -31,6 +31,7 @@ def config():
         },
         target="booking_status",
         primary_key="Booking_ID",
+        features_to_serve=["pk", "feature_1", "feature_2"],
     )
 
 

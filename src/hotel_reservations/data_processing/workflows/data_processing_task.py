@@ -4,6 +4,8 @@
 - If the preprocessing has not been done yet on this workspace, preprocessing is done on all input data and the train/test data is written to UC.
 
 This ensures that the code also works after deploying to a new workspace, while only running the necessary compute.
+
+If the drift parameter is True, this script will preprocess drifted data (from hotel_reservations_skewed), split the data and write to train/test tables with a suffix '_skewed'.
 """
 
 import argparse
