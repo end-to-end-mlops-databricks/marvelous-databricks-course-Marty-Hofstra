@@ -100,13 +100,21 @@ def test_refresh_monitor(monitoring, mock_workspace_client):
     mock_workspace_client.quality_monitors.run_refresh.assert_called_once_with(table_name="test_table")
 
 
-def test_refresh_monitor_failure(monitoring, mock_workspace_client):
+@pytest.mark.parametrize(
+    "error,expected_message",
+    [
+        (Exception("Refresh failed"), "Failed to refresh monitor: Refresh failed"),
+        (ValueError("Invalid table"), "Failed to refresh monitor: Invalid table"),
+        (ConnectionError("Network error"), "Failed to refresh monitor: Network error"),
+    ],
+)
+def test_refresh_monitor_failure(monitoring, mock_workspace_client, error, expected_message):
     """
     Test refresh_monitor handles RuntimeError on failure.
     """
     # Mock behavior to raise an exception
-    mock_workspace_client.quality_monitors.run_refresh = MagicMock(side_effect=Exception("Refresh failed"))
+    mock_workspace_client.quality_monitors.run_refresh = MagicMock(side_effect=error)
 
     # Execute and verify exception is raised
-    with pytest.raises(RuntimeError, match="Failed to refresh monitor: Refresh failed"):
+    with pytest.raises(RuntimeError, match=expected_message):
         monitoring.refresh_monitor()

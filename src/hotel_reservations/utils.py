@@ -250,9 +250,13 @@ def predict_refresh_monitor(
         monitoring_instance (Monitoring): Instance of the monitoring class, as initialised in the workflow.
     """
     suffix = "_skewed" if data_type == "drift" else ""
-    train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data{suffix}")
-    test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data{suffix}")
-    full_df = train_data.unionByName(test_data)
+    try:
+        train_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_train_data{suffix}")
+        test_data = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}_test_data{suffix}")
+        full_df = train_data.unionByName(test_data)
+    except Exception as e:
+        logging.error(f"Failed to read training/test data: {e}")
+        raise
 
     if data_type == "drift":
         full_df.cache()  # This was required due to performance issues with predicting on this df
@@ -267,5 +271,5 @@ def predict_refresh_monitor(
     monitoring_instance.refresh_monitor()
 
     print(
-        "New predictions, based on the {data_type} data have been written to the prediction table, and the Lakehouse monitor has been updated"
+        f"New predictions, based on the {data_type} data have been written to the prediction table, and the Lakehouse monitor has been updated"
     )

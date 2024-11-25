@@ -71,7 +71,7 @@ def feature_serving():
         FeatureLookup(
             table_name=featurisation_instance.feature_table_name,
             lookup_key=featurisation_instance.primary_key,
-            feature_names=["avg_price_per_room", "no_of_week_nights", "prediction"],
+            feature_names=[f for f in config.features_to_serve if f != config.primary_key] + ["prediction"],
         )
     ]
 

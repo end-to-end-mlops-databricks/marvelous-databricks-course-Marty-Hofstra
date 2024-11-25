@@ -60,4 +60,8 @@ class ProjectConfig(BaseModel):
     cat_features: Dict[str, CatFeature]
     target: str
     primary_key: str
-    features_to_serve: list[str]
+    features_to_serve: list[str] = Field(
+        default_factory=list,
+        min_items=1,
+        description="List of features to be served. Must be defined in num_features or cat_features",
+    )
