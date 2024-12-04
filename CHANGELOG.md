@@ -4,6 +4,20 @@ All notable changes to the `hotel_reservations` project will be documented in th
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.0] - 2024-11-23
+
+### Added
+- Implemented Snapshot monitoring class for predictions table to track data drift
+- Added drift simulation capability to synthetic data generation
+- Added new hotel-reservations-monitoring job with predict and monitor tasks
+
+### Changed
+- `generate_synthetic_data` function fully in PySpark, as opposed to switching back and forth to Pandas
+- The preprocessor class now has a drift option
+- The preprocessor task now has a drift option that is assigned as task parameter in the job config
+
+### Fixed
+
 ## [0.2.0] - 2024-11-18
 
 ### Added

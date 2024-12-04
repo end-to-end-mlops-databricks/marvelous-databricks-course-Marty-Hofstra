@@ -5,7 +5,7 @@ from pyspark.sql import SparkSession
 
 from hotel_reservations.data_processing.data_processor import DataProcessor
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
-from test.utils import spark_session
+from test.test_conf import spark_session
 
 spark = spark_session
 
@@ -30,6 +30,7 @@ mock_config = ProjectConfig(
     },
     target="booking_status",
     primary_key="Booking_ID",
+    features_to_serve=["pk", "feature_1", "feature_2"],
 )
 
 
@@ -74,6 +75,23 @@ def test_data_processor_init(mock_read, mock_dataframe, spark: SparkSession):
     )
 
     assert processor.df == mock_dataframe
+
+
+@patch.object(SparkSession, "read")
+def test_data_processor_init_with_drift(mock_read, mock_dataframe, spark: SparkSession):
+    """
+    Test the DataProcessor initialization when the drift parameter is set to True.
+    """
+    mock_read.table.return_value = mock_dataframe
+
+    processor = DataProcessor(mock_config, spark, drift=True)
+
+    mock_read.table.assert_called_once_with(
+        f"{mock_config.catalog}.{mock_config.db_schema}.{mock_config.use_case_name}_skewed"
+    )
+
+    assert processor.df == mock_dataframe
+    assert processor.suffix == "_skewed"
 
 
 # Test the split_data function

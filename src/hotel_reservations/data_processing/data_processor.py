@@ -22,15 +22,19 @@ class DataProcessor:
         Splits the DataFrame into training and test sets
     """
 
-    def __init__(self, config: ProjectConfig, spark: SparkSession) -> None:
+    def __init__(self, config: ProjectConfig, spark: SparkSession, drift: bool = False) -> None:
         """Constructs all the necessary attributes for the preprocessing object
 
         Args:
             config (ProjectConfig): Project configuration file converted to dict, containing the catalog and schema where the data resides. Moreover, it contains the model parameters, numerical features, categorical features and the target variables.
             spark (SparkSession): The spark session is required for running Spark functionality outside of Databricks.
+            drift (bool): True if synthetic drift data has to be processed.
         """
         self.config: ProjectConfig = config
-        self.df: DataFrame = spark.read.table(f"{config.catalog}.{config.db_schema}.{config.use_case_name}")
+        self.suffix: str = "_skewed" if drift else ""
+        self.df: DataFrame = spark.read.table(
+            f"{config.catalog}.{config.db_schema}.{config.use_case_name}{self.suffix}"
+        )
         self.X: Optional[DataFrame] = None
         self.y: Optional[DataFrame] = None
         self.preprocessor: Optional[Pipeline] = None

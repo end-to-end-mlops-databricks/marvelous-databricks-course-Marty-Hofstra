@@ -4,7 +4,7 @@ import pytest
 
 from hotel_reservations.featurisation.featurisation import Featurisation
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
-from test.utils import spark_session
+from test.test_conf import spark_session
 
 spark = spark_session
 
@@ -31,6 +31,7 @@ def config():
         },
         target="booking_status",
         primary_key="Booking_ID",
+        features_to_serve=["pk", "feature_1", "feature_2"],
     )
 
 

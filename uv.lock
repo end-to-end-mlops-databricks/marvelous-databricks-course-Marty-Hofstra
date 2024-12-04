@@ -723,12 +723,13 @@ wheels = [
 
 [[package]]
 name = "hotel-reservations"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "cffi" },
     { name = "cloudpickle" },
     { name = "databricks-feature-engineering" },
+    { name = "databricks-sdk" },
     { name = "lightgbm" },
     { name = "matplotlib" },
     { name = "mlflow" },
@@ -748,7 +749,6 @@ dependencies = [
 dev = [
     { name = "build" },
     { name = "databricks-connect" },
-    { name = "databricks-sdk" },
     { name = "ipykernel" },
     { name = "pip" },
     { name = "pyspark" },
@@ -767,7 +767,7 @@ requires-dist = [
     { name = "cloudpickle", specifier = ">=3.0.0,<4" },
     { name = "databricks-connect", marker = "extra == 'dev'", specifier = ">=15.4.1,<16" },
     { name = "databricks-feature-engineering", specifier = ">=0.6,<1" },
-    { name = "databricks-sdk", marker = "extra == 'dev'", specifier = ">=0.32.0,<0.33" },
+    { name = "databricks-sdk", specifier = ">=0.32.0,<0.33" },
     { name = "hotel-reservations", extras = ["test"], marker = "extra == 'dev'" },
     { name = "ipykernel", marker = "extra == 'dev'", specifier = ">=6.29.5,<7" },
     { name = "lightgbm", specifier = ">=4.5.0,<5" },

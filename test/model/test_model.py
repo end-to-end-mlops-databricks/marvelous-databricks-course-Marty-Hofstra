@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession
 
 from hotel_reservations.models.model import Model
 from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
-from test.utils import spark_session
+from test.test_conf import spark_session
 
 spark = spark_session
 
@@ -30,6 +30,7 @@ mock_config = ProjectConfig(
     },
     target="booking_status",
     primary_key="Booking_ID",
+    features_to_serve=["pk", "feature_1", "feature_2"],
 )
 
 

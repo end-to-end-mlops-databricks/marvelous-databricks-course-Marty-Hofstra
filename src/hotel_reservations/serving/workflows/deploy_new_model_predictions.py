@@ -24,7 +24,7 @@ def deploy_new_model_predictions():
         spark, f"models:/{config.catalog}.{config.db_schema}.{config.use_case_name}_model_basic/{model_version}"
     )
 
-    columns_to_serve = [config.target, "avg_price_per_room", "no_of_week_nights"]
+    columns_to_serve = config.features_to_serve
 
     full_df = train_data.unionByName(test_data)
 

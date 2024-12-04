@@ -22,7 +22,7 @@ variables:
 resources:
   jobs:
     hotel-reservations:
-      name: hotel-reservations-demo
+      name: hotel-reservations-main
       schedule:
         quartz_cron_expression: "0 0 6 ? * MON"
         timezone_id: "Europe/Amsterdam"
@@ -47,8 +47,11 @@ resources:
             job_cluster_key: "hotel-reservation-cluster"
             spark_python_task:
               python_file: "src/hotel_reservations/data_processing/workflows/data_processing_task.py"
+              parameters:
+                - "--simulate_drift"
+                - "False"
             libraries:
-            - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: if_refreshed
             condition_task:
               op: "EQUAL_TO"
@@ -67,7 +70,7 @@ resources:
                 - "--job_run_id"
                 - "{{job.id}}"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: "evaluate_model"
             depends_on:
               - task_key: "train_model"
@@ -75,7 +78,7 @@ resources:
             spark_python_task:
               python_file: "src/hotel_reservations/models/workflows/evaluate_model_task.py"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
           - task_key: model_update
             condition_task:
               op: "EQUAL_TO"
@@ -91,7 +94,56 @@ resources:
             spark_python_task:
               python_file: "src/hotel_reservations/serving/workflows/deploy_new_model_predictions.py"
             libraries:
-              - whl: ./dist/hotel_reservations-0.2.0-py3-none-any.whl
+              - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
+    hotel-reservations-monitoring:
+      name: hotel-reservations-monitoring
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON"
+        timezone_id: "Europe/Amsterdam"
+        pause_status: ${var.schedule_pause_status}
+      tags:
+        project_name: "hotel-reservation"
+      job_clusters:
+        - job_cluster_key: "hotel-reservation-cluster"
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            data_security_mode: "SINGLE_USER"
+            node_type_id: "Standard_D4ds_v4"
+            driver_node_type_id: "Standard_D4ds_v4"
+            autoscale:
+              min_workers: 2
+              max_workers: 4
+            policy_id: ${var.cluster_policy_id}
+            azure_attributes:
+              availability: SPOT_WITH_FALLBACK_AZURE
+      tasks:
+          - task_key: "preprocessing"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/data_processing/workflows/data_processing_task.py"
+              parameters:
+                - "--simulate_drift"
+                - "False"
+            libraries:
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
+          - task_key: "preprocessing_drift"
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/data_processing/workflows/data_processing_task.py"
+              parameters:
+                - "--simulate_drift"
+                - "True"
+            libraries:
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
+          - task_key: predict_monitor
+            job_cluster_key: "hotel-reservation-cluster"
+            spark_python_task:
+              python_file: "src/hotel_reservations/monitoring/workflows/predict_monitor.py"
+            libraries:
+            - whl: ./dist/hotel_reservations-0.3.0-py3-none-any.whl
+            depends_on:
+              - task_key: "preprocessing"
+              - task_key: "preprocessing_drift"
 targets:
   dev:
     mode: development

@@ -6,8 +6,11 @@ import pytest
 import requests
 import yaml
 from pyspark.sql.functions import col
+from pyspark.sql.functions import max as spark_max
+from pyspark.sql.functions import min as spark_min
+from pyspark.sql.types import DoubleType, IntegerType
 
-from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature, ProjectConfig
+from hotel_reservations.types.project_config_types import CatFeature, Constraints, NumFeature
 from hotel_reservations.utils import (
     check_repo_info,
     generate_booking_ids_regex,
@@ -15,7 +18,7 @@ from hotel_reservations.utils import (
     get_error_metrics,
     open_config,
 )
-from test.utils import spark_session
+from test.test_conf import spark_session
 
 spark = spark_session
 
@@ -41,6 +44,7 @@ mock_config: dict = {
     },
     "target": "booking_status",
     "primary_key": "Booking_ID",
+    "features_to_serve": ["pk", "feature_1", "feature_2"],
 }
 
 
@@ -263,34 +267,12 @@ def test_generate_booking_ids_regex_mixed_prefix_lengths():
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
-mock_project_config = ProjectConfig(
-    catalog="my_catalog",
-    schema="my_schema",
-    use_case_name="hotel_reservations",
-    user_dir_path="/Users/user/",
-    git_repo="git_repo",
-    volume_whl_path="Volumes/users/user/packages/",
-    parameters={"learning_rate": 0.01, "n_estimators": 1000, "max_depth": 6},
-    num_features={
-        "no_of_adults": NumFeature(type="integer", constraints=Constraints(min=0)),
-        "avg_price_per_room": NumFeature(type="float", constraints=Constraints(min=0.0)),
-    },
-    cat_features={
-        "type_of_meal_plan": CatFeature(
-            type="string", allowed_values=["Meal Plan 1", "Meal Plan 2", "Meal Plan 3", "Not Selected"]
-        ),
-        "required_car_parking_space": CatFeature(type="bool", allowed_values=[True, False], encoding=[1, 0]),
-    },
-    target="booking_status",
-    primary_key="Booking_ID",
-)
-
-
 @pytest.fixture
 def mock_input_data(spark):
     data = {
         "no_of_adults": [1, 2, 3],
         "avg_price_per_room": [100.0, 200.0, 150.0],
+        "no_of_week_nights": [3, 2, 1],
         "type_of_meal_plan": ["Meal Plan 1", "Meal Plan 2", "Meal Plan 3"],
         "required_car_parking_space": [1, 0, 1],
         "booking_id": ["INN001", "INN002", "INN003"],
@@ -298,59 +280,61 @@ def mock_input_data(spark):
     return spark.createDataFrame(pd.DataFrame(data))
 
 
-def test_generate_synthetic_data_numerical_constraints(mock_input_data, spark):
-    num_rows = 100
+def test_generate_synthetic_data_basic(mock_input_data):
+    synthetic_data = generate_synthetic_data(mock_input_data, num_rows=50)
 
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
+    assert synthetic_data.count() == 50
+    expected_columns = [
+        "Booking_ID",
+        "no_of_adults",
+        "no_of_children",
+        "no_of_weekend_nights",
+        "no_of_week_nights",
+        "type_of_meal_plan",
+        "required_car_parking_space",
+        "room_type_reserved",
+        "lead_time",
+        "arrival_year",
+        "arrival_month",
+        "arrival_date",
+        "market_segment_type",
+        "repeated_guest",
+        "no_of_previous_cancellations",
+        "no_of_previous_bookings_not_canceled",
+        "avg_price_per_room",
+        "no_of_special_requests",
+        "booking_status",
+    ]
+    assert set(synthetic_data.columns) == set(expected_columns)
+    assert synthetic_data.schema["no_of_adults"].dataType == IntegerType()
+    assert synthetic_data.schema["avg_price_per_room"].dataType == DoubleType()
 
-    # Verify number of rows
-    assert synthetic_data.count() == num_rows
-
-    # Check numerical constraints
-    num_features = mock_project_config.num_features
-    for col_name, feature in num_features.items():
-        min_value = feature.constraints.min
-        assert synthetic_data.filter(col(col_name) < min_value).count() == 0
-
-
-def test_generate_synthetic_data_categorical_values(mock_input_data, spark):
-    num_rows = 100
-
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
-
-    # Verify categorical features
-    cat_features = mock_project_config.cat_features
-    for col_name, feature in cat_features.items():
-        allowed_values = feature.allowed_values if feature.encoding is None else feature.encoding
-        values = synthetic_data.select(col_name).distinct().rdd.flatMap(lambda x: x).collect()
-        assert all(value in allowed_values for value in values)
-
-
-def test_generate_synthetic_data_primary_keys(mock_input_data, spark):
-    num_rows = 100
-
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
-
-    # Verify primary keys are unique
-    ids = synthetic_data.select(mock_project_config.primary_key).rdd.flatMap(lambda x: x).collect()
-    assert len(ids) == len(set(ids))
-
-
-def test_generate_synthetic_data_target_variable(mock_input_data, spark):
-    num_rows = 100
-
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows)
-
-    # Verify target variable values
-    target_values = ["Not_Canceled", "Canceled"]
-    values = synthetic_data.select(mock_project_config.target).distinct().rdd.flatMap(lambda x: x).collect()
-    assert all(value in target_values for value in values)
+    # Add value range validation
+    adults_stats = synthetic_data.select(
+        spark_min("no_of_adults").alias("min"), spark_max("no_of_adults").alias("max")
+    ).collect()[0]
+    assert adults_stats.min >= 1, "no_of_adults should be at least 1"
+    assert adults_stats.max <= 10, "no_of_adults should not exceed 10"
 
 
-def test_generate_synthetic_data(mock_input_data, spark):
-    # Generate synthetic data with a large number of rows
-    num_rows = 150000
-    synthetic_data = generate_synthetic_data(mock_project_config, mock_input_data, num_rows=num_rows)
-
-    # Assert the number of rows is capped at 100,000
+def test_generate_synthetic_data_num_rows_cap(mock_input_data):
+    synthetic_data = generate_synthetic_data(mock_input_data, num_rows=200000)
+    # Ensure num_rows is capped at 100,000
     assert synthetic_data.count() == 100000
+
+
+def test_generate_synthetic_data_with_drift(mock_input_data):
+    synthetic_data = generate_synthetic_data(mock_input_data, num_rows=50, drift=True)
+    # Check drift modifications
+    max_price_in_synthetic = synthetic_data.select(col("avg_price_per_room")).rdd.map(lambda row: row[0]).max()
+    max_price_in_input = mock_input_data.select(col("avg_price_per_room")).rdd.map(lambda row: row[0]).max()
+    assert max_price_in_synthetic >= max_price_in_input * 1.5
+
+
+def test_generate_synthetic_data_unique_ids(mock_input_data):
+    synthetic_data = generate_synthetic_data(mock_input_data, num_rows=50)
+    existing_ids = set(mock_input_data.select("Booking_ID").rdd.flatMap(lambda x: x).collect())
+    synthetic_ids = set(synthetic_data.select("Booking_ID").rdd.flatMap(lambda x: x).collect())
+    # Check that synthetic IDs are unique and do not overlap with existing IDs
+    assert len(synthetic_ids) == 50
+    assert synthetic_ids.isdisjoint(existing_ids)
